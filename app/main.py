@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.routers import dashboard
 
 app = FastAPI(
     title="UNPHU Academic Insights API",
@@ -13,6 +14,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(dashboard.router)
 
 @app.get("/")
 def root():
