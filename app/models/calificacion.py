@@ -13,9 +13,9 @@ class calificacionCreate(BaseModel):
             raise ValueError("La nota debe estar entre 0 y 100")
         return v
     
-    class calificacionResponde(BaseModel):
-        id: int
-        id_estudiante: str
-        codigo_materia: str
-        nota: float
-        periodo_academico: str
+class calificacionResponde(BaseModel):
+    id: int
+    id_estudiante: str
+    codigo_materia: str
+    nota: float
+    periodo_academico: str
