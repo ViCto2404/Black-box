@@ -3,7 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers import (
     dashboard, estudiantes, calificaciones, 
     feedback, reportes, escuelas, profesores,
-    materias, secciones, directores, carreras)
+    materias, secciones, directores, carreras, 
+    auth)
 
 app = FastAPI(
     title="UNPHU Academic Insights API",
@@ -29,6 +30,7 @@ app.include_router(feedback.router)
 app.include_router(reportes.router)
 app.include_router(directores.router)
 app.include_router(carreras.router)
+app.include_router(auth.router)
 
 @app.get("/")
 def root():

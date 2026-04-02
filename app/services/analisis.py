@@ -7,11 +7,21 @@ def _ejecutar_query(query):
         return resultado.data
     return resultado
 
-def get_rendimiento_por_materia(periodo:str, codigo_carrera: str= None):
+def get_rendimiento_por_materia(periodo:str, codigo_escuela: str= None, codigo_carrera: str = None):
     query = supabase.table("calificacion") \
-        .select("nota, codigo_materia, id_estudiante, materia(codigo, nombre, codigo_carrera)") \
+        .select("nota, codigo_materia, id_estudiante, materia!inner(" \
+        "codigo, " \
+        "nombre, " \
+        "codigo_carrera, " \
+        "carreras!inner(codigo_escuela))") \
         .eq("periodo_academico", periodo)
     
+    if codigo_escuela:
+        query = query.eq("materia.carreras.codigo_escuela", codigo_escuela)
+    
+    if codigo_carrera:
+        query = query.eq("materia.codigo_carrera", codigo_carrera)
+
     data = _ejecutar_query(query)
 
     if not data:
@@ -50,8 +60,8 @@ def get_rendimiento_por_materia(periodo:str, codigo_carrera: str= None):
 
     return resumen.to_dict(orient="records")
 
-def get_materias_criticas(periodo: str, umbral: float = 30.0):
-    rendimiento = get_rendimiento_por_materia(periodo)
+def get_materias_criticas(periodo: str, codigo_escuela: str= None, codigo_carrera: str = None, umbral: float = 30.0):
+    rendimiento = get_rendimiento_por_materia(periodo, codigo_escuela, codigo_carrera)
 
     if not rendimiento:
         return []
@@ -62,15 +72,18 @@ def get_materias_criticas(periodo: str, umbral: float = 30.0):
     
     return criticas.to_dict(orient="records")
 
-def get_resumen_periodo(periodo:str):
+def get_resumen_periodo(periodo:str, escuela: str = None):
     query = supabase.table("calificacion") \
-        .select("nota, codigo_materia, id_estudiante") \
+        .select("nota, codigo_materia, id_estudiante, materia!inner(codigo_carrera, carreras!inner(codigo_escuela))") \
         .eq("periodo_academico", periodo)
     
+    if escuela:
+        query = query.eq("materia.carreras.codigo_escuela", escuela)
+
     data = _ejecutar_query(query)
 
     if not data:
-        return{}
+        return{"Estudiantes vacio": True}
     
     df = pd.DataFrame(data)
 
@@ -99,7 +112,7 @@ def get_masa_estudiantil(codigo_carrera: str = None):
         return []
     
     df = pd.DataFrame(data)
-    df["nombre_carrera"] = df["carrera"].apply(lambda x: x["nombre"] if isinstance(x, dict) else None)
+    df["nombre_carrera"] = df["carreras"].apply(lambda x: x["nombre"] if isinstance(x, dict) else None)
 
     resumen = df.groupby(["codigo_carrera", "nombre_carrera"]).agg(
         total_activos = ("estado_activo", lambda x: int((x=="Activo").sum())),

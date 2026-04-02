@@ -4,22 +4,25 @@ from app.services import analisis
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
 @router.get("/resumen/{periodo}")
-def resumen_periodo(periodo:str):
-    return analisis.get_resumen_periodo(periodo)
+def resumen_periodo(periodo:str, escuela: str = Query(default=None)):
+    return analisis.get_resumen_periodo(periodo, escuela)
 
 @router.get("/rendimiento/{periodo}")
 def rendimiento_materias(
     periodo:str,
-    carrera: str = Query(defaul=None)
+    codigo_escuela: str = Query(default=None),
+    codigo_carrera: str = Query(default=None)
 ):
-    return analisis.get_rendimiento_por_materia(periodo, carrera)
+    return analisis.get_rendimiento_por_materia(periodo, codigo_escuela, codigo_carrera=None)
 
 @router.get("/criticas/{periodo}")
 def materias_criticas(
     periodo: str,
+    codigo_escuela: str = Query(default=None),
+    codigo_carrera: str = Query(default=None),
     umbral: float = Query(default=30.0)
 ):
-    return analisis.get_materias_criticas(periodo, umbral)
+    return analisis.get_materias_criticas(periodo, codigo_escuela, codigo_carrera, umbral)
 
 @router.get("/masa-estudiantil")
 def masa_estudiantil(

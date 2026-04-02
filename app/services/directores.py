@@ -46,7 +46,6 @@ def crear_director(payload: dict):
         if error_rol:
             return None, error_rol
 
-        # Verificar que no exista ya un director con ese ID
         existente = supabase.table("directores") \
             .select("id_unphu") \
             .eq("id_unphu", payload["id_unphu"]) \
@@ -54,7 +53,6 @@ def crear_director(payload: dict):
         if existente.data:
             return None, "Ya existe un director con ese ID"
 
-        # Verificar que el correo no esté en uso
         correo = supabase.table("directores") \
             .select("correo_institucional") \
             .eq("correo_institucional", payload["correo_institucional"]) \
@@ -62,7 +60,6 @@ def crear_director(payload: dict):
         if correo.data:
             return None, "El correo institucional ya está en uso"
 
-        # Verificar que la escuela existe si se provee
         if payload.get("codigo_escuela"):
             escuela = supabase.table("escuela") \
                 .select("codigo") \
@@ -71,10 +68,35 @@ def crear_director(payload: dict):
             if not escuela.data:
                 return None, f"La escuela '{payload['codigo_escuela']}' no existe"
 
+        # Crear usuario en Supabase Auth
+        auth_response = supabase.auth.admin.create_user({
+            "email":    payload["correo_institucional"],
+            "password": payload["id_unphu"],  # contraseña temporal = id_unphu
+            "email_confirm": True
+        })
+
+        if not auth_response.user:
+            return None, "Error al crear el usuario de autenticación"
+
+        user_id = auth_response.user.id
+
+        # Insertar en la tabla director
         data = supabase.table("directores").insert(payload).execute()
         if not data.data:
             return None, "Error al crear el director"
-        return data.data[0], None
+
+        # Registrar en profiles
+        supabase.table("profiles").insert({
+            "id":       user_id,
+            "id_unphu": payload["id_unphu"],
+            "rol":      "director"
+        }).execute()
+
+        return {
+            **data.data[0],
+            "mensaje": f"Usuario creado. Contraseña temporal: {payload['id_unphu']}"
+        }, None
+
     except Exception as e:
         return None, f"Error inesperado: {str(e)}"
 

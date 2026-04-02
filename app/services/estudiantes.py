@@ -38,22 +38,48 @@ def get_estudiante_por_id(id_unphu: str):
     return estudiante
 
 def crear_estudiante(payload: dict):
-    existente = supabase.table("estudiantes")\
-    .select("id_unphu")\
-    .eq("id_unphu", payload["id_unphu"])\
-    .execute()
+    try:
+        existente = supabase.table("estudiantes") \
+            .select("id_unphu") \
+            .eq("id_unphu", payload["id_unphu"]) \
+            .execute()
+        if existente.data:
+            return None, "El ID UNPHU ya existe en el sistema"
 
-    if existente.data:
-        return None, "El ID UNPHU ya existe en el sistema"
-    
-    data = supabase.table("estudiantes")\
-    .insert(payload)\
-    .execute()
+        if not payload.get("correo_institucional"):
+            return None, "El correo institucional es obligatorio para crear el usuario"
 
-    if not data.data:
-        return None, "Error al crear el estudiante"
-    
-    return data.data[0], None
+        # Crear usuario en Supabase Auth
+        auth_response = supabase.auth.admin.create_user({
+            "email":    payload["correo_institucional"],
+            "password": payload["id_unphu"],  # contraseña temporal = id_unphu
+            "email_confirm": True
+        })
+
+        if not auth_response.user:
+            return None, "Error al crear el usuario de autenticación"
+
+        user_id = auth_response.user.id
+
+        # Insertar en la tabla estudiantes
+        data = supabase.table("estudiantes").insert(payload).execute()
+        if not data.data:
+            return None, "Error al crear el estudiante"
+
+        # Registrar en profiles
+        supabase.table("profiles").insert({
+            "id":       user_id,
+            "id_unphu": payload["id_unphu"],
+            "rol":      "estudiante"
+        }).execute()
+
+        return {
+            **data.data[0],
+            "mensaje": f"Usuario creado. Contraseña temporal: {payload['id_unphu']}"
+        }, None
+
+    except Exception as e:
+        return None, f"Error inesperado: {str(e)}"
 
 def actualizar_estado(id_unphu: str, estado: str):
     if estado not in ("Activo", "Inactivo"):
