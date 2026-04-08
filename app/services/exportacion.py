@@ -157,11 +157,14 @@ def exportar_materias_criticas_excel(periodo: str):
         fmt = _get_excel_formats(wb)
         if not criticas:
             ws = wb.add_worksheet("Materias Críticas"); ws.write("A1", "No hay datos"); return buffer.getvalue()
-        df = pd.DataFrame(criticas)[["codigo_materia", "nombre_materia", "total_estudiantes", "promedio", "porcentaje_aprobacion", "porcentaje_reprobacion"]]
-        df.columns = ["Código", "Materia", "Total estudiantes", "Promedio", "% Aprobación", "% Reprobación"]
+        
+        # get_materias_criticas retorna: codigo_materia, nombre_materia, codigo_carrera, total_estudiantes, promedio, porcentaje_reprobacion, umbral_reprobacion
+        df = pd.DataFrame(criticas)[["codigo_materia", "nombre_materia", "codigo_carrera", "total_estudiantes", "promedio", "porcentaje_reprobacion"]]
+        df.columns = ["Código", "Materia", "Carrera", "Estudiantes", "Promedio", "% Reprobación"]
+        
         df.to_excel(writer, sheet_name="Materias Críticas", index=False, startrow=1)
         ws = writer.sheets["Materias Críticas"]
-        ws.set_column("A:A", 12); ws.set_column("B:B", 35); ws.set_column("C:F", 18)
+        ws.set_column("A:A", 12); ws.set_column("B:B", 35); ws.set_column("C:C", 15); ws.set_column("D:F", 18)
         ws.write("A1", f"Detalle de materias críticas — Periodo {periodo}", fmt["title"])
         for col_num, col_name in enumerate(df.columns): ws.write(1, col_num, col_name, fmt["header"])
     return buffer.getvalue()

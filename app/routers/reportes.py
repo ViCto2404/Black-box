@@ -1,14 +1,18 @@
 from fastapi import APIRouter, HTTPException, Query
-from fastapi.responses import Response
+from fastapi.responses import Response, StreamingResponse
 from app.services import exportacion
 from datetime import datetime
 from typing import Literal, Optional
+from io import BytesIO
 
 router = APIRouter(prefix="/reportes", tags=["Reportes"])
 
 def generar_respuesta(contenido: bytes, nombre_base: str, formato: str, periodo: Optional[str] = None):
     timestamp = datetime.now().strftime('%Y%m%d')
-    suffix = f"_{periodo}" if periodo else ""
+    # Limpiamos el periodo para el nombre del archivo
+    periodo_clean = str(periodo).replace(" ", "_") if periodo else ""
+    suffix = f"_{periodo_clean}" if periodo_clean else ""
+    
     if formato == "excel":
         media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         nombre = f"{nombre_base}{suffix}_{timestamp}.xlsx"
@@ -16,13 +20,32 @@ def generar_respuesta(contenido: bytes, nombre_base: str, formato: str, periodo:
         media_type = "application/pdf"
         nombre = f"{nombre_base}{suffix}_{timestamp}.pdf"
     
-    return Response(
-        content=contenido,
+    # Usamos StreamingResponse para una mejor compatibilidad con descargas binarias
+    return StreamingResponse(
+        BytesIO(contenido),
         media_type=media_type,
-        headers={"Content-Disposition": f"attachment; filename={nombre}"}
+        headers={
+            "Content-Disposition": f'attachment; filename="{nombre}"',
+            "Access-Control-Expose-Headers": "Content-Disposition"
+        }
     )
 
-@router.get("/resumen/{periodo}")
+# Metadatos para Swagger UI
+RESPONSES_METADATA = {
+    200: {
+        "content": {
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {"type": "string", "format": "binary"}
+            },
+            "application/pdf": {
+                "schema": {"type": "string", "format": "binary"}
+            }
+        },
+        "description": "Retorna el archivo binario para su descarga.",
+    }
+}
+
+@router.get("/resumen/{periodo}", responses=RESPONSES_METADATA)
 def reporte_resumen(periodo: str, format: Literal["excel", "pdf"] = Query("excel")):
     try:
         if format == "excel":
@@ -33,7 +56,7 @@ def reporte_resumen(periodo: str, format: Literal["excel", "pdf"] = Query("excel
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/rendimiento/{periodo}")
+@router.get("/rendimiento/{periodo}", responses=RESPONSES_METADATA)
 def reporte_rendimiento(periodo: str, format: Literal["excel", "pdf"] = Query("excel")):
     try:
         if format == "excel":
@@ -44,7 +67,7 @@ def reporte_rendimiento(periodo: str, format: Literal["excel", "pdf"] = Query("e
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/criticas/{periodo}")
+@router.get("/criticas/{periodo}", responses=RESPONSES_METADATA)
 def reporte_criticas(periodo: str, format: Literal["excel", "pdf"] = Query("excel")):
     try:
         if format == "excel":
@@ -55,7 +78,7 @@ def reporte_criticas(periodo: str, format: Literal["excel", "pdf"] = Query("exce
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/masa/{periodo}")
+@router.get("/masa/{periodo}", responses=RESPONSES_METADATA)
 def reporte_masa(periodo: str, format: Literal["excel", "pdf"] = Query("excel")):
     try:
         if format == "excel":
@@ -66,7 +89,7 @@ def reporte_masa(periodo: str, format: Literal["excel", "pdf"] = Query("excel"))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/feedback")
+@router.get("/feedback", responses=RESPONSES_METADATA)
 def reporte_feedback(codigo_carrera: Optional[str] = Query(None), format: Literal["excel", "pdf"] = Query("excel")):
     try:
         if format == "excel":
