@@ -10,240 +10,287 @@ from app.services.analisis import(
     get_resumen_periodo,
     get_rendimiento_por_materia,
     get_materias_criticas,
-    get_masa_estudiantil
+    get_masa_estudiantil,
+    get_detalle_feedback
 )
 
-def exportar_excel(periodo: str):
-    resumen = get_resumen_periodo(periodo)
-    rendimiento = get_rendimiento_por_materia(periodo)
-    criticas = get_materias_criticas(periodo)
-    masa = get_masa_estudiantil(periodo)
+# --- Helpers de Formato ---
 
+def _get_excel_formats(wb):
+    return {
+        "header": wb.add_format({"bold": True, "bg_color": "#1A5C2E", "font_color":"#FFFFFF", "border":1, "align": "center", "valign": "vcenter"}),
+        "title": wb.add_format({"bold": True, "font_size": 14, "font_color": "#1A5C2E"}),
+        "label": wb.add_format({"bold": True, "font_color": "#444444"}),
+        "value": wb.add_format({"align": "left"}),
+        "red": wb.add_format({"bg_color": "#FAECE7", "font_color": "#712B13", "border": 1}),
+        "green": wb.add_format({"bg_color": "#EAF3DE", "font_color": "#27500A", "border": 1}),
+        "cell": wb.add_format({"border": 1, "align": "center"})
+    }
+
+def _get_pdf_base(buffer, title, periodo=None):
+    doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.75*inch, bottomMargin=0.75*inch)
+    styles = getSampleStyleSheet()
+    story = []
+    
+    story.append(Paragraph(f"<font color='#1A5C2E'><b>{title}</b></font>", styles["Title"]))
+    info = f"Generado el {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+    if periodo:
+        info = f"Periodo: {periodo} — " + info
+    story.append(Paragraph(info, styles["Normal"]))
+    story.append(Spacer(1, 0.3*inch))
+    
+    return doc, story, styles
+
+# --- Reporte 1: Resumen del periodo académico ---
+
+def exportar_resumen_periodo_excel(periodo: str):
+    resumen = get_resumen_periodo(periodo)
     buffer = BytesIO()
     with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
         wb = writer.book
-
-        fmt_header = wb.add_format({
-            "bold": True, "bg_color": "#1A55C2E", "font_color":"#FFFFFF", 
-            "border":1, "align": "center", "valing": "vcenter"
-        })
-
-        fmt_title = wb.add_format({
-            "bold": True, "font-size": 14, "font-color": "#1A5C2E"
-        })
-
-        fmt_label = wb.add_format({"bold": True, "font_color": "#444441"})
-        fmt_value = wb.add_format({"align": "left"})
-        fmt_red   = wb.add_format({
-            "bg_color": "#FAECE7", "font_color": "#712B13", "border": 1
-        })
-        fmt_green = wb.add_format({
-            "bg_color": "#EAF3DE", "font_color": "#27500A", "border": 1
-        })
-        fmt_cell  = wb.add_format({"border": 1, "align": "center"})
-
-        ws1 = writer.sheets.get("Resumen") or wb.add_worksheet("Resumen")
-        writer.sheets["Resumen"] = ws1
-        ws1.set_column("A:A", 35)
-        ws1.set_column("B:B", 20)
-
-        ws1.write("A1", f"Reporte Académico — Periodo {periodo}", fmt_title)
-        ws1.write("A2", f"Generado el {datetime.now().strftime('%d/%m/%Y %H:%M')}", fmt_value)
-        ws1.write("A4", "Indicador", fmt_header)
-        ws1.write("B4", "Valor", fmt_header)
-
-        filas_resumen = [
-            ("Total estudiantes analizados", resumen.get("total_estudiantes_analizados", 0)),
-            ("Total materias",               resumen.get("total_materias", 0)),
-            ("Índice de aprobación global",  f"{resumen.get('indice_aprobacion_global', 0)}%"),
-            ("Materias críticas",            resumen.get("cantidad_materias_criticas", 0)),
+        fmt = _get_excel_formats(wb)
+        ws = wb.add_worksheet("Resumen")
+        ws.set_column("A:A", 35); ws.set_column("B:B", 20)
+        ws.write("A1", f"Resumen Académico — Periodo {periodo}", fmt["title"])
+        ws.write("A2", f"Generado el {datetime.now().strftime('%d/%m/%Y %H:%M')}", fmt["value"])
+        ws.write("A4", "Indicador", fmt["header"]); ws.write("B4", "Valor", fmt["header"])
+        filas = [
+            ("Total secciones analizadas",   resumen.get("total_secciones_analizadas", 0)),
+            ("Secciones en estado crítico",  resumen.get("secciones_criticas", 0)),
+            ("Promedio general",             resumen.get("promedio_general", 0)),
+            ("Índice de aprobación",         f"{resumen.get('indice_aprobacion', 0)}%"),
         ]
-        for i, (label, value) in enumerate(filas_resumen, start=4):
-            ws1.write(i, 0, label, fmt_label)
-            ws1.write(i, 1, value, fmt_value)
-
-        if rendimiento:
-            df_rend = pd.DataFrame(rendimiento)
-            df_rend = df_rend[[
-                "codigo_materia", "nombre_materia", "codigo_carrera",
-                "total_estudiantes", "promedio",
-                "porcentaje_aprobacion", "porcentaje_reprobacion"
-            ]]
-            df_rend.columns = [
-                "Código", "Materia", "Carrera",
-                "Total estudiantes", "Promedio",
-                "% Aprobación", "% Reprobación"
-            ]
-            df_rend.to_excel(writer, sheet_name="Rendimiento", index=False, startrow=1)
-            ws2 = writer.sheets["Rendimiento"]
-            ws2.set_column("A:A", 12)
-            ws2.set_column("B:B", 35)
-            ws2.set_column("C:G", 18)
-            ws2.write("A1", f"Rendimiento por materia — Periodo {periodo}", fmt_title)
-            for col_num, col_name in enumerate(df_rend.columns):
-                ws2.write(1, col_num, col_name, fmt_header)
-            # Colorear filas críticas
-            for row_num, row in enumerate(df_rend.itertuples(), start=2):
-                fmt = fmt_red if row._7 > 30 else fmt_green
-                ws2.write(row_num, 5, row._6, fmt)
-                ws2.write(row_num, 6, row._7, fmt)
-
-        # ── Hoja 3: Materias críticas ────────────────────────────────
-        if criticas:
-            df_crit = pd.DataFrame(criticas)
-            df_crit = df_crit[[
-                "codigo_materia", "nombre_materia",
-                "total_estudiantes", "promedio",
-                "porcentaje_aprobacion", "porcentaje_reprobacion"
-            ]]
-            df_crit.columns = [
-                "Código", "Materia",
-                "Total estudiantes", "Promedio",
-                "% Aprobación", "% Reprobación"
-            ]
-            df_crit.to_excel(writer, sheet_name="Materias Críticas", index=False, startrow=1)
-            ws3 = writer.sheets["Materias Críticas"]
-            ws3.set_column("A:A", 12)
-            ws3.set_column("B:B", 35)
-            ws3.set_column("C:F", 18)
-            ws3.write("A1", f"Materias con reprobación > 30% — Periodo {periodo}", fmt_title)
-            for col_num, col_name in enumerate(df_crit.columns):
-                ws3.write(1, col_num, col_name, fmt_header)
-
-        # ── Hoja 4: Masa estudiantil ─────────────────────────────────
-        if masa:
-            df_masa = pd.DataFrame(masa)
-            df_masa.columns = [
-                "Código carrera", "Carrera",
-                "Activos", "Inactivos", "Total"
-            ]
-            df_masa.to_excel(writer, sheet_name="Masa Estudiantil", index=False, startrow=1)
-            ws4 = writer.sheets["Masa Estudiantil"]
-            ws4.set_column("A:A", 15)
-            ws4.set_column("B:B", 40)
-            ws4.set_column("C:E", 15)
-            ws4.write("A1", "Masa estudiantil por carrera", fmt_title)
-            for col_num, col_name in enumerate(df_masa.columns):
-                ws4.write(1, col_num, col_name, fmt_header)
-
+        for i, (label, value) in enumerate(filas, start=4):
+            ws.write(i, 0, label, fmt["label"]); ws.write(i, 1, value, fmt["value"])
     return buffer.getvalue()
 
-def exportar_pdf(periodo: str) -> bytes:
-    resumen     = get_resumen_periodo(periodo)
-    criticas    = get_materias_criticas(periodo)
-    rendimiento = get_rendimiento_por_materia(periodo)
-
+def exportar_resumen_periodo_pdf(periodo: str):
+    resumen = get_resumen_periodo(periodo)
     buffer = BytesIO()
-    doc    = SimpleDocTemplate(buffer, pagesize=letter,
-                               topMargin=0.75*inch, bottomMargin=0.75*inch)
-    styles = getSampleStyleSheet()
-    story  = []
-
-    verde  = colors.HexColor("#1A5C2E")
-    blanco = colors.white
-    rojo   = colors.HexColor("#FAECE7")
-    verde_claro = colors.HexColor("#EAF3DE")
-
-    # Título
-    story.append(Paragraph(
-        f"<font color='#1A5C2E'><b>Reporte Académico UNPHU</b></font>",
-        styles["Title"]
-    ))
-    story.append(Paragraph(
-        f"Periodo: {periodo} — Generado el {datetime.now().strftime('%d/%m/%Y %H:%M')}",
-        styles["Normal"]
-    ))
-    story.append(Spacer(1, 0.3*inch))
-
-    # Resumen ejecutivo
-    story.append(Paragraph("<b>Resumen ejecutivo</b>", styles["Heading2"]))
-    story.append(Spacer(1, 0.1*inch))
-
-    data_resumen = [
+    doc, story, styles = _get_pdf_base(buffer, "Resumen Académico UNPHU", periodo)
+    
+    data = [
         ["Indicador", "Valor"],
-        ["Total estudiantes analizados", str(resumen.get("total_estudiantes_analizados", 0))],
-        ["Total materias",               str(resumen.get("total_materias", 0))],
-        ["Índice de aprobación global",  f"{resumen.get('indice_aprobacion_global', 0)}%"],
-        ["Materias críticas",            str(resumen.get("cantidad_materias_criticas", 0))],
+        ["Total secciones analizadas",   str(resumen.get("total_secciones_analizadas", 0))],
+        ["Secciones en estado crítico",  str(resumen.get("secciones_criticas", 0))],
+        ["Promedio general",             str(resumen.get("promedio_general", 0))],
+        ["Índice de aprobación",         f"{resumen.get('indice_aprobacion', 0)}%"],
     ]
-    tabla_resumen = Table(data_resumen, colWidths=[4*inch, 2.5*inch])
-    tabla_resumen.setStyle(TableStyle([
-        ("BACKGROUND",  (0, 0), (-1, 0),  verde),
-        ("TEXTCOLOR",   (0, 0), (-1, 0),  blanco),
-        ("FONTNAME",    (0, 0), (-1, 0),  "Helvetica-Bold"),
-        ("FONTSIZE",    (0, 0), (-1, -1), 10),
-        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F5F5F5")]),
-        ("GRID",        (0, 0), (-1, -1), 0.5, colors.HexColor("#AAAAAA")),
-        ("PADDING",     (0, 0), (-1, -1), 8),
+    t = Table(data, colWidths=[4*inch, 2.5*inch], hAlign='CENTER')
+    t.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1A5C2E")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("PADDING", (0, 0), (-1, -1), 10),
     ]))
-    story.append(tabla_resumen)
-    story.append(Spacer(1, 0.3*inch))
+    story.append(t)
+    doc.build(story)
+    return buffer.getvalue()
 
-    # Rendimiento por materia
-    if rendimiento:
-        story.append(Paragraph("<b>Rendimiento por materia</b>", styles["Heading2"]))
-        story.append(Spacer(1, 0.1*inch))
+# --- Reporte 2: Rendimiento por asignatura ---
 
-        data_rend = [["Materia", "Total", "Promedio", "% Aprobación", "% Reprobación"]]
+def exportar_rendimiento_excel(periodo: str):
+    rendimiento = get_rendimiento_por_materia(periodo)
+    buffer = BytesIO()
+    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+        wb = writer.book
+        fmt = _get_excel_formats(wb)
+        if not rendimiento:
+            ws = wb.add_worksheet("Rendimiento"); ws.write("A1", "No hay datos"); return buffer.getvalue()
+        df = pd.DataFrame(rendimiento)[["codigo_materia", "nombre_materia", "codigo_carrera", "total_estudiantes", "promedio", "porcentaje_aprobacion", "porcentaje_reprobacion"]]
+        df.columns = ["Código", "Materia", "Carrera", "Total estudiantes", "Promedio", "% Aprobación", "% Reprobación"]
+        df.to_excel(writer, sheet_name="Rendimiento", index=False, startrow=1)
+        ws = writer.sheets["Rendimiento"]
+        ws.set_column("A:A", 12); ws.set_column("B:B", 35); ws.set_column("C:G", 18)
+        ws.write("A1", f"Rendimiento por asignatura — Periodo {periodo}", fmt["title"])
+        for col_num, col_name in enumerate(df.columns): ws.write(1, col_num, col_name, fmt["header"])
+        for row_num, row in enumerate(df.itertuples(), start=2):
+            f_cell = fmt["red"] if row._7 > 30 else fmt["green"]
+            ws.write(row_num, 5, row._6, f_cell); ws.write(row_num, 6, row._7, f_cell)
+    return buffer.getvalue()
+
+def exportar_rendimiento_pdf(periodo: str):
+    rendimiento = get_rendimiento_por_materia(periodo)
+    buffer = BytesIO()
+    doc, story, styles = _get_pdf_base(buffer, "Rendimiento por Asignatura", periodo)
+    if not rendimiento:
+        story.append(Paragraph("No hay datos disponibles.", styles["Normal"]))
+    else:
+        data = [["Código", "Materia", "Est. Activos", "Promedio", "% Aprob.", "Estado"]]
         for r in rendimiento:
-            data_rend.append([
-                r["nombre_materia"],
+            estado_bd = r.get("estado_materia", "N/A")
+            data.append([
+                r["codigo_materia"],
+                r["nombre_materia"][:25],
                 str(r["total_estudiantes"]),
                 str(r["promedio"]),
                 f"{r['porcentaje_aprobacion']}%",
-                f"{r['porcentaje_reprobacion']}%",
+                estado_bd
             ])
-
-        tabla_rend = Table(data_rend, colWidths=[2.5*inch, 0.8*inch, 0.9*inch, 1.1*inch, 1.2*inch])
-        style_rend = [
-            ("BACKGROUND",  (0, 0), (-1, 0),  verde),
-            ("TEXTCOLOR",   (0, 0), (-1, 0),  blanco),
-            ("FONTNAME",    (0, 0), (-1, 0),  "Helvetica-Bold"),
-            ("FONTSIZE",    (0, 0), (-1, -1), 9),
-            ("GRID",        (0, 0), (-1, -1), 0.5, colors.HexColor("#AAAAAA")),
-            ("PADDING",     (0, 0), (-1, -1), 6),
-            ("ALIGN",       (1, 0), (-1, -1), "CENTER"),
+            
+        t = Table(data, colWidths=[0.8*inch, 2.2*inch, 1.0*inch, 0.9*inch, 0.8*inch, 0.8*inch], hAlign='CENTER')
+        style_list = [
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1A5C2E")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("FONTSIZE", (0, 0), (-1, -1), 8),
+            ("ALIGN", (2, 0), (-1, -1), "CENTER"),
         ]
-        # Colorear filas críticas en rojo
         for i, r in enumerate(rendimiento, start=1):
             if r["porcentaje_reprobacion"] > 30:
-                style_rend.append(("BACKGROUND", (0, i), (-1, i), colors.HexColor("#FAECE7")))
-            else:
-                style_rend.append(("BACKGROUND", (0, i), (-1, i),
-                    colors.white if i % 2 == 0 else colors.HexColor("#F5F5F5")))
+                style_list.append(("BACKGROUND", (0, i), (-1, i), colors.HexColor("#FAECE7")))
 
-        tabla_rend.setStyle(TableStyle(style_rend))
-        story.append(tabla_rend)
-        story.append(Spacer(1, 0.3*inch))
+        t.setStyle(TableStyle(style_list))
+        story.append(t)
+        
+    doc.build(story)
+    return buffer.getvalue()
 
-    # Materias críticas
-    if criticas:
-        story.append(Paragraph(
-            "<b>Materias críticas</b> <font color='#993C1D'>(reprobación &gt; 30%)</font>",
-            styles["Heading2"]
-        ))
-        story.append(Spacer(1, 0.1*inch))
+# --- Reporte 3: Detalle de materias críticas ---
 
-        data_crit = [["Materia", "Promedio", "% Reprobación"]]
+def exportar_materias_criticas_excel(periodo: str):
+    criticas = get_materias_criticas(periodo)
+    buffer = BytesIO()
+    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+        wb = writer.book
+        fmt = _get_excel_formats(wb)
+        if not criticas:
+            ws = wb.add_worksheet("Materias Críticas"); ws.write("A1", "No hay datos"); return buffer.getvalue()
+        df = pd.DataFrame(criticas)[["codigo_materia", "nombre_materia", "total_estudiantes", "promedio", "porcentaje_aprobacion", "porcentaje_reprobacion"]]
+        df.columns = ["Código", "Materia", "Total estudiantes", "Promedio", "% Aprobación", "% Reprobación"]
+        df.to_excel(writer, sheet_name="Materias Críticas", index=False, startrow=1)
+        ws = writer.sheets["Materias Críticas"]
+        ws.set_column("A:A", 12); ws.set_column("B:B", 35); ws.set_column("C:F", 18)
+        ws.write("A1", f"Detalle de materias críticas — Periodo {periodo}", fmt["title"])
+        for col_num, col_name in enumerate(df.columns): ws.write(1, col_num, col_name, fmt["header"])
+    return buffer.getvalue()
+
+def exportar_materias_criticas_pdf(periodo: str):
+    criticas = get_materias_criticas(periodo)
+    buffer = BytesIO()
+    doc, story, styles = _get_pdf_base(buffer, "Detalle de Materias Críticas", periodo)
+    if not criticas:
+        story.append(Paragraph("No se encontraron materias críticas.", styles["Normal"]))
+    else:
+        data = [["Código", "Materia", "Carrera", "Cant.", "Prom.", "% Reprob."]]
         for c in criticas:
-            data_crit.append([
-                c["nombre_materia"],
+            data.append([
+                c["codigo_materia"],
+                c["nombre_materia"][:25],
+                c["codigo_carrera"],
+                str(c["total_estudiantes"]),
                 str(c["promedio"]),
                 f"{c['porcentaje_reprobacion']}%"
             ])
-
-        tabla_crit = Table(data_crit, colWidths=[3.5*inch, 1.5*inch, 1.5*inch])
-        tabla_crit.setStyle(TableStyle([
-            ("BACKGROUND",  (0, 0), (-1, 0),  verde),
-            ("TEXTCOLOR",   (0, 0), (-1, 0),  blanco),
+        t = Table(data, colWidths=[0.8*inch, 2.2*inch, 1.0*inch, 0.6*inch, 0.8*inch, 1.1*inch], hAlign='CENTER')
+        t.setStyle(TableStyle([
+            ("BACKGROUND",  (0, 0), (-1, 0),  colors.HexColor("#1A5C2E")),
+            ("TEXTCOLOR",   (0, 0), (-1, 0),  colors.white),
             ("FONTNAME",    (0, 0), (-1, 0),  "Helvetica-Bold"),
-            ("FONTSIZE",    (0, 0), (-1, -1), 10),
+            ("FONTSIZE",    (0, 0), (-1, -1), 9),
             ("BACKGROUND",  (0, 1), (-1, -1), colors.HexColor("#FAECE7")),
-            ("GRID",        (0, 0), (-1, -1), 0.5, colors.HexColor("#AAAAAA")),
-            ("PADDING",     (0, 0), (-1, -1), 6),
-            ("ALIGN",       (1, 0), (-1, -1), "CENTER"),
+            ("GRID",        (0, 0), (-1, -1), 0.5, colors.grey),
+            ("ALIGN",       (3, 0), (-1, -1), "CENTER"),
         ]))
-        story.append(tabla_crit)
-
+        story.append(t)
     doc.build(story)
     return buffer.getvalue()
+
+# --- Reporte 4: Detalle de masa estudiantil ---
+
+def exportar_masa_estudiantil_excel(periodo: str):
+    masa = get_masa_estudiantil(periodo)
+    buffer = BytesIO()
+    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+        wb = writer.book
+        fmt = _get_excel_formats(wb)
+        if not masa:
+            ws = wb.add_worksheet("Masa Estudiantil"); ws.write("A1", "No hay datos"); return buffer.getvalue()
+        df = pd.DataFrame(masa)
+        df.columns = ["Código carrera", "Carrera", "Activos", "Inactivos", "Total"]
+        df.to_excel(writer, sheet_name="Masa Estudiantil", index=False, startrow=1)
+        ws = writer.sheets["Masa Estudiantil"]
+        ws.set_column("A:A", 15); ws.set_column("B:B", 40); ws.set_column("C:E", 15)
+        ws.write("A1", "Detalle de masa estudiantil", fmt["title"])
+        for col_num, col_name in enumerate(df.columns): ws.write(1, col_num, col_name, fmt["header"])
+    return buffer.getvalue()
+
+def exportar_masa_estudiantil_pdf(periodo: str):
+    masa = get_masa_estudiantil(periodo)
+    buffer = BytesIO()
+    doc, story, styles = _get_pdf_base(buffer, "Detalle de Masa Estudiantil", periodo)
+    if not masa:
+        story.append(Paragraph("No hay datos disponibles.", styles["Normal"]))
+    else:
+        data = [["Carrera", "Activos", "Inactivos", "Total"]]
+        for m in masa:
+            data.append([m["nombre_carrera"][:40], str(m["activos"]), str(m["inactivos"]), str(m["total"])])
+        t = Table(data, colWidths=[3.5*inch, 1*inch, 1*inch, 1*inch], hAlign='CENTER')
+        t.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1A5C2E")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("FONTSIZE", (0, 0), (-1, -1), 9),
+        ]))
+        story.append(t)
+    doc.build(story)
+    return buffer.getvalue()
+
+# --- Reporte 5: Detalle de feedback estudiantil ---
+
+def exportar_feedback_excel(codigo_carrera: str = None):
+    feedback = get_detalle_feedback(codigo_carrera)
+    buffer = BytesIO()
+    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+        wb = writer.book
+        fmt = _get_excel_formats(wb)
+        if not feedback:
+            ws = wb.add_worksheet("Feedback"); ws.write("A1", "No hay datos"); return buffer.getvalue()
+        df = pd.DataFrame(feedback)
+        df.columns = ["Fecha", "Carrera", "Tipo de queja", "Anónimo", "Comentario"]
+        df.to_excel(writer, sheet_name="Feedback", index=False, startrow=1)
+        ws = writer.sheets["Feedback"]
+        ws.set_column("A:A", 20); ws.set_column("B:B", 15); ws.set_column("C:C", 25); ws.set_column("D:D", 10); ws.set_column("E:E", 50)
+        ws.write("A1", "Detalle de Feedback Estudiantil", fmt["title"])
+        for col_num, col_name in enumerate(df.columns): ws.write(1, col_num, col_name, fmt["header"])
+    return buffer.getvalue()
+
+def exportar_feedback_pdf(codigo_carrera: str = None):
+    feedback = get_detalle_feedback(codigo_carrera)
+    buffer = BytesIO()
+    doc, story, styles = _get_pdf_base(buffer, "Detalle de Feedback Estudiantil")
+    if not feedback:
+        story.append(Paragraph("No hay feedback registrado.", styles["Normal"]))
+    else:
+        data = [["Fecha", "Carrera", "Aspectos", "Anón.", "Comentario"]]
+        for f in feedback:
+            # Formatear fecha si es necesario
+            fecha = f["fecha_envio"][:10] if f["fecha_envio"] else "N/A"
+            data.append([
+                fecha,
+                f["codigo_carrera"],
+                f["aspectos_evaluar"][:20],
+                f["es_anonimo_str"],
+                Paragraph(f["comentario"][:150], styles["Normal"]) if f["comentario"] else ""
+            ])
+            
+        t = Table(data, colWidths=[0.9*inch, 0.8*inch, 1.5*inch, 0.6*inch, 3.2*inch], hAlign='CENTER')
+        t.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1A5C2E")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("FONTSIZE", (0, 0), (-1, -1), 8),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ]))
+        story.append(t)
+    doc.build(story)
+    return buffer.getvalue()
+
+# --- Consolidado (Legacy support) ---
+
+def exportar_excel(periodo: str):
+    return exportar_resumen_periodo_excel(periodo)
+
+def exportar_pdf(periodo: str) -> bytes:
+    return exportar_resumen_periodo_pdf(periodo)

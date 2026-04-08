@@ -1,7 +1,7 @@
 import pandas as pd
 from io import BytesIO
 
-COLUMNAS_REQUERIDAS = {"id_estudiante", "codigo_materia", "nota", "periodo_academico"}
+COLUMNAS_REQUERIDAS = {"id_estudiante", "codigo_materia", "id_seccion", "nota", "periodo_academico"}
 
 def leer_archivo(contenido: bytes, nombre_archivo: str) -> pd.DataFrame:
     if nombre_archivo.endswith(".csv"):

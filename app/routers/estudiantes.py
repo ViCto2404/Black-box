@@ -25,6 +25,16 @@ def crear_estudiante(payload: EstudianteCreate):
         raise HTTPException(status_code=400, detail=error)
     return estudiante
 
+@router.patch("/{id_unphu}")
+def actualizar_estudiante(id_unphu: str, payload: EstudianteUpdate):
+    estudiante, error = svc.actualizar_estudiante(id_unphu, payload.model_dump(exclude_unset=True))
+    if error:
+        # Si error es un string (como "Estudiante no encontrado"), lanzamos 404 o 400
+        raise HTTPException(status_code=400, detail=error)
+    if not estudiante:
+        raise HTTPException(status_code=404, detail="Estudiante no encontrado")
+    return estudiante
+
 @router.patch("/{id_unphu}/estado")
 def cambiar_estado(id_unphu: str, estado: str = Query(...)):
     estudiante, error = svc.actualizar_estado(id_unphu, estado)
@@ -37,3 +47,4 @@ def eliminar_estudiante(id_unphu: str):
     ok, error = svc.eliminar_estudiante(id_unphu)
     if error:
         raise HTTPException(status_code=404, detail=error)
+    return {"status": "success", "message": "Estudiante eliminado correctamente"}

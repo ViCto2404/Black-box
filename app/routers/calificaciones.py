@@ -2,20 +2,21 @@ from fastapi import APIRouter, HTTPException, Query, UploadFile, File
 from typing import Annotated
 from app.services import calificaciones as svc
 from app.services.validacion import procesar_archivo
-from app.models.calificacion import calificacionCreate
+from app.models.calificacion import CalificacionCreate
 
 router = APIRouter(prefix="/calificaciones", tags=["calificaciones"])
 
 @router.get("/")
 def listar_calificaciones(
-    periodo: str = Query(default=None),
-    id_estudiante: str = Query(default=None),
-    codigo_materia: str = Query(default=None)
+    periodo:        str = Query(default=None),
+    id_estudiante:  str = Query(default=None),
+    codigo_materia: str = Query(default=None),
+    id_seccion:     int = Query(default=None)
 ):
-    return svc.get_calificaciones(periodo, id_estudiante, codigo_materia)
+    return svc.get_calificaciones(periodo, id_estudiante, codigo_materia, id_seccion)
 
 @router.post("/", status_code=201)
-def crear_calificacion(payload: calificacionCreate):
+def crear_calificacion(payload: CalificacionCreate):
     calificacion, error = svc.crear_calificacion(payload.model_dump())
     if error:
         raise HTTPException(status_code=400, detail=error)
