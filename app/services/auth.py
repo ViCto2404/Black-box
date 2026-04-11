@@ -78,3 +78,94 @@ def logout(token: str):
         return True, None
     except Exception as e:
         return False, str(e)
+    
+def cambiar_contrasena(email: str, password_actual: str, password_nuevo: str, password_confirmacion: str):
+    try:
+        # Verificar que las contraseñas nuevas coinciden
+        if password_nuevo != password_confirmacion:
+            return None, "Las contraseñas nuevas no coinciden"
+
+        # Verificar longitud mínima
+        if len(password_nuevo) < 6:
+            return None, "La contraseña nueva debe tener al menos 6 caracteres"
+
+        # Verificar que la contraseña nueva es diferente a la actual
+        if password_actual == password_nuevo:
+            return None, "La contraseña nueva debe ser diferente a la actual"
+
+        # Verificar credenciales actuales e iniciar sesión
+        auth_response = supabase.auth.sign_in_with_password({
+            "email":    email,
+            "password": password_actual
+        })
+
+        if not auth_response.user:
+            return None, "La contraseña actual es incorrecta"
+
+        # Usar el cliente con el token del usuario para actualizar
+        from supabase import create_client
+        from app.config import SUPABASE_URL, SUPABASE_KEY
+
+        cliente_usuario = create_client(SUPABASE_URL, SUPABASE_KEY)
+        cliente_usuario.auth.set_session(
+            auth_response.session.access_token,
+            auth_response.session.refresh_token
+        )
+
+        cliente_usuario.auth.update_user({"password": password_nuevo})
+
+        return {"mensaje": "Contraseña actualizada correctamente"}, None
+
+    except Exception as e:
+        if "Invalid login credentials" in str(e):
+            return None, "La contraseña actual es incorrecta"
+        return None, f"Error inesperado: {str(e)}"
+    
+def crear_administrador(id_unphu: str, email: str, password: str, nombre: str):
+    try:
+        # Verificar que el id_unphu no esté en uso
+        perfil = supabase.table("profiles") \
+            .select("id_unphu") \
+            .eq("id_unphu", id_unphu) \
+            .execute()
+        if perfil.data:
+            return None, "El ID UNPHU ya está en uso"
+
+        # Verificar que el correo no esté en uso en Auth
+        usuarios = supabase.auth.admin.list_users()
+        emails_existentes = [u.email for u in usuarios]
+        if email in emails_existentes:
+            return None, "El correo ya está en uso"
+
+        # Verificar longitud mínima de contraseña
+        if len(password) < 6:
+            return None, "La contraseña debe tener al menos 6 caracteres"
+
+        # Crear usuario en Supabase Auth
+        auth_response = supabase.auth.admin.create_user({
+            "email":         email,
+            "password":      password,
+            "email_confirm": True
+        })
+
+        if not auth_response.user:
+            return None, "Error al crear el usuario en Auth"
+
+        user_id = auth_response.user.id
+
+        # Registrar en profiles como administrador
+        supabase.table("profiles").insert({
+            "id":       user_id,
+            "id_unphu": id_unphu,
+            "rol":      "administrador"
+        }).execute()
+
+        return {
+            "mensaje":  f"Administrador '{nombre}' creado correctamente",
+            "id_unphu": id_unphu,
+            "email":    email,
+            "rol":      "administrador"
+        }, None
+
+    except Exception as e:
+        return None, f"Error inesperado: {str(e)}"

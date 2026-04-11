@@ -10,3 +10,9 @@ class LoginResponse(BaseModel):
     rol: str
     id_unphu: str
     nombre: str
+
+class AdminCreate(BaseModel):
+    id_unphu: str
+    email: str
+    password: str
+    nombre: str
