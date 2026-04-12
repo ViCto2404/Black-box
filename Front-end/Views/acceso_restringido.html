@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso Restringido - UNPHU</title>
+    <link rel="stylesheet" href="../CSS/global.css">
+    <link rel="stylesheet" href="../CSS/Styles.css">
+    <link rel="stylesheet" href="../CSS/navbar.css">
+</head>
+<body class="restricted-body">
+
+<div class="navbar">
+    <div class="left">
+        <a href="#" class="logo">BLACKBOX</a>
+    </div>
+    <div class="right" id="nav-auth-section">
+        <!-- Se completará vía JS -->
+    </div>
+</div>
+
+<div class="container restricted-container">
+    <div class="message-card">
+        <div class="icon-warning">⚠️</div>
+        <h2 id="restricted-title">Aviso del Sistema</h2>
+        <p id="restricted-message">Cargando información...</p>
+        <div class="restricted-actions">
+            <button onclick="cerrarSesion()" class="btn-unphu">Cerrar Sesión</button>
+        </div>
+    </div>
+</div>
+
+<footer class="main-footer">
+    <div class="footer-content">
+        <div class="footer-left">
+            <p><strong>UNPHU</strong> - Universidad Nacional Pedro Henríquez Ureña</p>
+        </div>
+        <div class="footer-right">
+            <p>&copy; 2026 BlackBox Project.</p>
+        </div>
+    </div>
+</footer>
+
+<script src="../JS/config.js"></script>
+<script src="../JS/auth.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const rol = (localStorage.getItem("userRole") || "").toLowerCase().trim();
+        const estado = (localStorage.getItem("userStatus") || "activo").toLowerCase().trim();
+        const escuela = localStorage.getItem("codigoEscuela");
+        
+        const titleElem = document.getElementById("restricted-title");
+        const messageElem = document.getElementById("restricted-message");
+
+        if (estado === "inactivo") {
+            titleElem.textContent = "Usuario Inactivo";
+            messageElem.textContent = "El usuario se encuentra inactivo, favor contactar al soporte técnico.";
+        } 
+        else if (rol === "profesor") {
+            titleElem.textContent = "Perfil en Preparación";
+            messageElem.textContent = "Por el momento no existe información para mostrarle a este usuario.";
+        }
+        else if (rol === "director" && (!escuela || escuela === "null")) {
+            titleElem.textContent = "Sin Escuela Asignada";
+            messageElem.textContent = "Por el momento no existe información para mostrarle a este usuario (Sin escuela vinculada).";
+        }
+        else {
+            messageElem.textContent = "No tienes permisos para acceder a esta sección.";
+        }
+
+        // Actualizar navbar
+        const nombre = localStorage.getItem("userName");
+        const authSection = document.getElementById("nav-auth-section");
+        if (nombre && authSection) {
+            authSection.innerHTML = `
+                <span style="color:white; margin-right:15px;">Hola, <b>${nombre}</b></span>
+                <a href="#" onclick="cerrarSesion()" style="color:white; font-weight:bold; text-decoration:none;">Cerrar Sesión</a>
+            `;
+        }
+    });
+</script>
+
+<style>
+    .restricted-body {
+        background-color: #f4f7f6;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+    }
+    .restricted-container {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+    .message-card {
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        text-align: center;
+        max-width: 500px;
+        width: 100%;
+        border-top: 5px solid #006837;
+    }
+    .icon-warning {
+        font-size: 50px;
+        margin-bottom: 20px;
+    }
+    .message-card h2 {
+        color: #006837;
+        margin-bottom: 15px;
+    }
+    .message-card p {
+        color: #555;
+        font-size: 1.1em;
+        line-height: 1.6;
+        margin-bottom: 30px;
+    }
+    .btn-unphu {
+        background-color: #006837;
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 6px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+    .btn-unphu:hover {
+        background-color: #004d2c;
+    }
+</style>
+</body>
+</html>

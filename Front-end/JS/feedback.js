@@ -4,23 +4,12 @@
 
 document.addEventListener("DOMContentLoaded", function() {
     const feedbackForm = document.getElementById("feedbackForm");
-    
-    // Autocompletar carrera del estudiante
-    const codigoCarrera = localStorage.getItem("codigoCarrera");
-    const carreraDisplay = document.getElementById("carrera_display");
-    const carreraHidden = document.getElementById("carrera");
-
-    if (codigoCarrera && carreraDisplay && carreraHidden) {
-        carreraDisplay.value = codigoCarrera;
-        carreraHidden.value = codigoCarrera;
-    }
 
     if (feedbackForm) {
         feedbackForm.addEventListener("submit", function(e) {
             e.preventDefault();
 
             // 1. Obtener valores del formulario
-            const carrera = document.getElementById("carrera").value;
             const tipo = document.getElementById("tipo").value;
             
             // Obtener múltiples categorías seleccionadas

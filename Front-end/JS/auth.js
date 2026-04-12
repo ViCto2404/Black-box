@@ -51,12 +51,34 @@ if (loginForm) {
                 console.log("DEBUG: codigoCarrera guardado exitosamente en localStorage:", localStorage.getItem("codigoCarrera"));
             }
 
+            if (data.estado) {
+                localStorage.setItem("userStatus", data.estado);
+            }
+
             alert(`Bienvenido, ${data.nombre}`);
 
-            // REDIRECCIÓN SEGÚN ROL
-            if (data.rol.toLowerCase() === "estudiante") {
+            const rol = data.rol.toLowerCase().trim();
+            const estado = (data.estado || "activo").toLowerCase().trim();
+            const escuela = data.codigo_escuela;
+
+            // LÓGICA DE REDIRECCIÓN CENTRALIZADA
+            if (estado === "inactivo") {
+                window.location.href = "acceso_restringido.html";
+            } 
+            else if (rol === "estudiante") {
                 window.location.href = "formulario_feedback.html";
-            } else {
+            } 
+            else if (rol === "profesor") {
+                window.location.href = "acceso_restringido.html";
+            }
+            else if (rol === "director") {
+                if (!escuela || escuela === "null") {
+                    window.location.href = "acceso_restringido.html";
+                } else {
+                    window.location.href = "Home.html";
+                }
+            }
+            else {
                 window.location.href = "Home.html";
             }
         })

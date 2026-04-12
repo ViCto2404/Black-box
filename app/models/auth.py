@@ -12,6 +12,7 @@ class LoginResponse(BaseModel):
     nombre: str
     codigo_escuela: str | None = None
     codigo_carrera: str | None = None
+    estado: str = "Activo"
 
 class AdminCreate(BaseModel):
     id_unphu: str

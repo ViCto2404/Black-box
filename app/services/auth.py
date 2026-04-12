@@ -35,26 +35,31 @@ def login(email: str, password: str):
         nombre = "Usuario"
         codigo_escuela = None
         codigo_carrera = None
+        estado = "Activo"
 
         # 2. Obtener datos específicos según el rol (siempre usando el cliente global)
         if rol_raw == "estudiante":
-            res = supabase.table("estudiantes").select("nombre, codigo_carrera").eq("id_unphu", id_unphu_raw).execute()
+            res = supabase.table("estudiantes").select("nombre, codigo_carrera, estado_activo").eq("id_unphu", id_unphu_raw).execute()
             if res.data:
                 nombre = res.data[0].get("nombre", "Estudiante")
                 codigo_carrera = res.data[0].get("codigo_carrera")
+                estado = res.data[0].get("estado_activo", "Activo")
         
         elif rol_raw == "director":
-            # Buscamos en 'directores' usando el email (más seguro)
             res = supabase.table("directores").select("*").eq("correo_institucional", email).execute()
-            
             if not res.data:
-                # Intento por id_unphu
                 res = supabase.table("directores").select("*").eq("id_unphu", id_unphu_raw).execute()
 
             if res.data:
                 director = res.data[0]
                 nombre = director.get("nombre", "Director")
                 codigo_escuela = director.get("codigo_escuela")
+                # Si no tiene escuela, lo manejamos en el frontend
+        
+        elif rol_raw == "profesor":
+            res = supabase.table("profesor").select("nombre").eq("correo_institucional", email).execute()
+            if res.data:
+                nombre = res.data[0].get("nombre", "Profesor")
 
         elif rol_raw == "administrador":
             nombre = "Administrador"
@@ -66,7 +71,8 @@ def login(email: str, password: str):
             "id_unphu":     id_unphu_raw,
             "nombre":       nombre,
             "codigo_escuela": codigo_escuela,
-            "codigo_carrera": codigo_carrera
+            "codigo_carrera": codigo_carrera,
+            "estado":       estado
         }, None
 
     except Exception as e:
