@@ -1,4 +1,4 @@
-const API = "https://black-box-bryr.onrender.com";
+// Usamos API_URL de config.js
 
 let modoEdicion = false;
 let idEditando = null;
@@ -33,10 +33,11 @@ window.onclick = function(event) {
 }
 
 function cargarProfesores() {
-    fetch(API + "/profesores/")
+    fetch(`${API_URL}/profesores`)
     .then(res => res.json())
     .then(data => {
         const tabla = document.querySelector("#tablaProfesores tbody");
+        if (!tabla) return;
         tabla.innerHTML = "";
         const profesores = data.profesores || data.data || data;
 
@@ -60,10 +61,11 @@ function cargarProfesores() {
 }
 
 function cargarCarreras() {
-    fetch(API + "/carreras/")
+    fetch(`${API_URL}/carreras`)
     .then(res => res.json())
     .then(data => {
         const select = document.getElementById("carreraProfesor");
+        if (!select) return;
         select.innerHTML = '<option value="">Seleccione Carrera</option>';
         const carreras = data.carreras || data.data || data;
         carreras.forEach(c => {
@@ -74,7 +76,7 @@ function cargarCarreras() {
 }
 
 function editarProfesor(id) {
-    fetch(API + "/profesores/" + id)
+    fetch(`${API_URL}/profesores/${id}`)
     .then(res => res.json())
     .then(p => {
         document.getElementById("idProfesor").value = p.id_profesor;
@@ -93,8 +95,8 @@ function editarProfesor(id) {
 }
 
 function eliminarProfesor(id) {
-    if (!confirm("¿Eliminar profesor " + id + "?")) return;
-    fetch(API + "/profesores/" + id, { method: "DELETE" })
+    if (!confirm(`¿Eliminar profesor ${id}?`)) return;
+    fetch(`${API_URL}/profesores/${id}`, { method: "DELETE" })
     .then(res => {
         if (res.ok) {
             alert("Profesor eliminado");
@@ -113,10 +115,10 @@ document.getElementById("crearProfesorForm").addEventListener("submit", function
         estado: document.getElementById("estadoProfesor").value
     };
 
-    let url = API + "/profesores/";
+    let url = `${API_URL}/profesores`;
     let method = "POST";
     if (modoEdicion) {
-        url = API + "/profesores/" + idEditando;
+        url = `${API_URL}/profesores/${idEditando}`;
         method = "PUT";
     }
 

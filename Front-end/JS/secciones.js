@@ -1,4 +1,4 @@
-const API = "https://black-box-bryr.onrender.com";
+// Usamos API_URL de config.js
 let modoEdicion = false;
 let idEditando = null; 
 let contadorHorarios = 0;
@@ -17,7 +17,7 @@ function abrirModal() {
         const contenedor = document.getElementById("contenedorHorarios");
         if (contenedor) contenedor.innerHTML = "";
         contadorHorarios = 0;
-        agregarHorario(); 
+        // No agregamos horario por defecto si es opcional
     }
 }
 
@@ -98,7 +98,7 @@ function eliminarFilaHorario(id) {
 // --- CRUD ---
 
 function cargarSecciones() {
-    fetch(`${API}/secciones`)
+    fetch(`${API_URL}/secciones`)
     .then(res => res.json())
     .then(data => {
         const tabla = document.querySelector("#tablaSecciones tbody");
@@ -126,33 +126,41 @@ function cargarSecciones() {
 }
 
 function cargarMateriasYProfesores() {
-    fetch(`${API}/materias`).then(res => res.json()).then(data => {
+    fetch(`${API_URL}/materias`).then(res => res.json()).then(data => {
         const select = document.getElementById("materiaSeccion");
         const materias = data.materias || data.data || data;
-        materias.forEach(m => select.innerHTML += `<option value="${m.codigo}">${m.nombre}</option>`);
+        materias.forEach(m => {
+            select.innerHTML += `<option value="${m.codigo}">${m.nombre}</option>`;
+        });
     });
 
-    fetch(`${API}/profesores`).then(res => res.json()).then(data => {
+    fetch(`${API_URL}/profesores`).then(res => res.json()).then(data => {
         const select = document.getElementById("profesorSeccion");
         const profesores = data.profesores || data.data || data;
-        profesores.forEach(p => select.innerHTML += `<option value="${p.id_profesor}">${p.nombre}</option>`);
+        profesores.forEach(p => {
+            select.innerHTML += `<option value="${p.id_profesor}">${p.nombre}</option>`;
+        });
     });
 }
 
 function editarSeccion(id) {
-    fetch(`${API}/secciones/${id}`)
+    fetch(`${API_URL}/secciones/${id}`)
     .then(res => res.json())
     .then(s => {
         document.getElementById("codigoSeccion").value = s.codigo_seccion;
         document.getElementById("materiaSeccion").value = s.materia;
-        document.getElementById("profesorSeccion").value = s.profesor;
-        document.getElementById("aula").value = s.aula;
+        document.getElementById("profesorSeccion").value = s.profesor || "";
+        document.getElementById("aula").value = s.aula || "";
         document.getElementById("cupoSeccion").value = s.cupo_max;
         document.getElementById("estadoSeccion").value = s.estado;
 
         document.getElementById("contenedorHorarios").innerHTML = "";
         contadorHorarios = 0;
-        if (s.horario) s.horario.split(", ").forEach(h => agregarHorario(h));
+        if (s.horario) {
+            s.horario.split(", ").forEach(h => {
+                if (h.trim()) agregarHorario(h);
+            });
+        }
 
         document.getElementById("codigoSeccion").disabled = true;
         document.getElementById("materiaSeccion").disabled = true;
@@ -166,7 +174,7 @@ function editarSeccion(id) {
 
 function eliminarSeccion(id) {
     if (!confirm("¿Eliminar esta sección?")) return;
-    fetch(`${API}/secciones/${id}`, { method: "DELETE" })
+    fetch(`${API_URL}/secciones/${id}`, { method: "DELETE" })
     .then(res => {
         if (res.ok) { alert("Sección eliminada"); cargarSecciones(); }
     });
@@ -183,32 +191,37 @@ document.getElementById("crearSeccionForm").addEventListener("submit", function(
         if(d && i && f) listaHorarios.push(`${d} ${i}-${f}`);
     });
 
-    // --- EL TRUCO PARA EVITAR EL ERROR 400 ---
+    // Validar campos opcionales para enviar null
+    const profesorInput = document.getElementById("profesorSeccion").value;
+    const aulaInput = document.getElementById("aula").value;
+    
+    const profesor = profesorInput === "" ? null : profesorInput;
+    const aula = aulaInput === "" ? null : aulaInput;
+    const horario = listaHorarios.length > 0 ? listaHorarios.join(", ") : null;
+
     let data;
     if (modoEdicion) {
-        // Solo enviamos los campos permitidos en SeccionUpdate
         data = {
-            profesor: document.getElementById("profesorSeccion").value,
-            aula: document.getElementById("aula").value,
+            profesor: profesor,
+            aula: aula,
             cupo_max: parseInt(document.getElementById("cupoSeccion").value),
-            horario: listaHorarios.join(", "),
+            horario: horario,
             estado: document.getElementById("estadoSeccion").value
         };
     } else {
-        // Enviamos todo lo que pide SeccionCreate
         data = {
             codigo_seccion: document.getElementById("codigoSeccion").value,
             materia: document.getElementById("materiaSeccion").value,
-            profesor: document.getElementById("profesorSeccion").value,
-            periodo: "01-2026", 
-            aula: document.getElementById("aula").value,
+            profesor: profesor,
+            periodo: "01-2025", // Formato corregido segun peticiones anteriores
+            aula: aula,
             cupo_max: parseInt(document.getElementById("cupoSeccion").value),
-            horario: listaHorarios.join(", "),
+            horario: horario,
             estado: document.getElementById("estadoSeccion").value
         };
     }
 
-    let url = modoEdicion ? `${API}/secciones/${idEditando}` : `${API}/secciones`;
+    let url = modoEdicion ? `${API_URL}/secciones/${idEditando}` : `${API_URL}/secciones`;
     let method = modoEdicion ? "PUT" : "POST";
 
     fetch(url, {
@@ -226,7 +239,7 @@ document.getElementById("crearSeccionForm").addEventListener("submit", function(
         cargarSecciones();
         cerrarModal();
     })
-    .catch(err => alert("Error 400: " + err.message));
+    .catch(err => alert("Error: " + err.message));
 });
 
 document.addEventListener("DOMContentLoaded", () => {

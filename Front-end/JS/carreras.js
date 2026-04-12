@@ -1,4 +1,4 @@
-const API = "https://black-box-bryr.onrender.com";
+// Usamos API_URL de config.js
 
 let modoEdicion = false;
 let idEditando = null;
@@ -33,7 +33,7 @@ window.onclick = function(event) {
 
 // CARGAR LISTADO
 function cargarCarreras() {
-    fetch(`${API}/carreras`) // URL limpia sin slash final
+    fetch(`${API_URL}/carreras`)
     .then(res => res.json())
     .then(data => {
         const tabla = document.querySelector("#tablaCarreras tbody");
@@ -62,7 +62,7 @@ function cargarCarreras() {
 
 // CARGAR SELECT DE ESCUELAS
 function cargarEscuelas() {
-    fetch(`${API}/escuelas`)
+    fetch(`${API_URL}/escuelas`)
     .then(res => res.json())
     .then(data => {
         const select = document.getElementById("escuelaCarrera");
@@ -78,7 +78,7 @@ function cargarEscuelas() {
 
 // EDITAR (Cargar datos al form)
 function editarCarrera(codigo) {
-    fetch(`${API}/carreras/${codigo}`)
+    fetch(`${API_URL}/carreras/${codigo}`)
     .then(res => {
         if (!res.ok) throw new Error("No se pudo obtener la carrera");
         return res.json();
@@ -104,7 +104,7 @@ function editarCarrera(codigo) {
 function eliminarCarrera(codigo) {
     if (!confirm(`¿Estás seguro de eliminar la carrera ${codigo}?`)) return;
 
-    fetch(`${API}/carreras/${codigo}`, { 
+    fetch(`${API_URL}/carreras/${codigo}`, { 
         method: "DELETE" 
     })
     .then(async res => {
@@ -131,11 +131,11 @@ document.getElementById("crearCarreraForm").addEventListener("submit", function(
         estado: document.getElementById("estadoCarrera").value
     };
 
-    let url = `${API}/carreras`;
+    let url = `${API_URL}/carreras`;
     let method = "POST";
 
     if (modoEdicion) {
-        url = `${API}/carreras/${idEditando}`;
+        url = `${API_URL}/carreras/${idEditando}`;
         method = "PUT";
     }
 

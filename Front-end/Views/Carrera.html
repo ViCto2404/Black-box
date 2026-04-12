@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Carreras</title>
+    <link rel="stylesheet" href="../CSS/global.css">
     <link rel="stylesheet" href="../CSS/carreras.css">
-    <link rel="stylesheet" href="../CSS/navbar.css">
-    <link rel="stylesheet" href="../CSS/Styles.css">
 </head>
 <body>
 
@@ -23,7 +22,7 @@
 
 <!-- SIDEBAR -->
 <div id="sidebar" class="sidebar">
-    <p class="logo">UNPHU</p>
+    <p class="sidebar-logo">UNPHU</p>
     <div class="sidebar-menu">
         <button class="dropdown-btn">🎓 Gestión Académica ▼</button>
         <div class="dropdown-container">
@@ -50,7 +49,6 @@
             <a href="Register.html">Register</a>
         </div>
     </div>
-    
 </div>
 
 <div class="container">
@@ -92,27 +90,27 @@
             </div>
 
             <form id="crearCarreraForm">
+                <p class="form-note"><span class="required">*</span> Campos obligatorios</p>
+
                 <div class="form-group">
-                    <label>Código</label>
+                    <label>Código <span class="required">*</span></label>
                     <input type="text" id="codigoCarrera" maxlength="10" required placeholder="Ej: ISC">
                 </div>
 
                 <div class="form-group">
-                    <label>Nombre de la Carrera</label>
+                    <label>Nombre de la Carrera <span class="required">*</span></label>
                     <input type="text" id="nombreCarrera" maxlength="100" required>
                 </div>
 
                 <div class="form-group">
-                    <label>Escuela</label>
+                    <label>Escuela <span class="required">*</span></label>
                     <select id="escuelaCarrera" required>
                         <option value="">Seleccione Escuela</option>
-                        <option value="ESC-INF">Escuela de Informática</option>
-                        <option value="ESC-IND">Escuela de Ingeniería Industrial</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label>Duración (años)</label>
+                    <label>Duración (años) <span class="required">*</span></label>
                     <input type="number" id="duracion" min="1" max="7" required>
                 </div>
 
@@ -133,7 +131,22 @@
     </div>
 </div>
 
+<footer class="main-footer">
+    <div class="footer-content">
+        <div class="footer-left">
+            <p><strong>UNPHU</strong> - Universidad Nacional Pedro Henríquez Ureña</p>
+            <p>Av. John F. Kennedy, Km 7 1/2, Santo Domingo, R.D.</p>
+        </div>
+        <div class="footer-right">
+            <p>&copy; 2026 BlackBox Project. Todos los derechos reservados.</p>
+            <a href="https://unphu.edu.do" target="_blank">unphu.edu.do</a>
+        </div>
+    </div>
+</footer>
+
+<script src="../JS/config.js"></script>
 <script src="../JS/carreras.js"></script>
+<script src="../JS/auth.js"></script>
 <script src="../JS/navbar.js"></script>
 </body>
 </html>

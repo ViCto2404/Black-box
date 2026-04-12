@@ -77,8 +77,8 @@ function cargarDirectores() {
         // Manejamos la respuesta según el formato de la API
         const directores = data.directores || data.data || data;
         directores.forEach(d => {
-            // Se usa el campo id_unphu como value según la estructura de la tabla directores
-            select.innerHTML += `<option value="${d.id_unphu}">${d.nombre}</option>`;
+            // Se muestra ID y Nombre en el selector
+            select.innerHTML += `<option value="${d.id_unphu}">${d.id_unphu} - ${d.nombre}</option>`;
         });
     })
     .catch(err => console.error("Error al cargar directores:", err));

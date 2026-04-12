@@ -85,7 +85,7 @@ def eliminar_profesor(id_profesor: str):
     try:
         data = supabase.table("profesor") \
             .delete() \
-            .eq("id_profesor", id_profesor) \
+            .ilike("id_profesor", id_profesor.strip()) \
             .execute()
         if not data.data:
             return False, "Profesor no encontrado"
