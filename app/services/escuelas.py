@@ -2,31 +2,38 @@ from app.database.supabase_client import supabase
 
 
 def get_todas_escuelas(estado: str = None):
-    query = supabase.table("escuelas").select("*, id_director(nombre)")
+    # La relación se llama 'directores' si así está en Supabase, o usamos el nombre de la columna
+    # Probaremos con el nombre de la columna id_director para el join
+    query = supabase.table("escuelas").select("*, directores:id_director(nombre)")
     if estado:
         query = query.eq("estado", estado)
+    
     data = query.execute()
     if not data.data:
         return []
+    
     resultados = []
     for e in data.data:
-        e["nombre_director"] = e["director"]["nombre"] if isinstance(e.get("director"), dict) else None
-        e.pop("director", None)
+        # Ajustamos el mapeo según la respuesta del join
+        e["nombre_director"] = e["directores"]["nombre"] if isinstance(e.get("directores"), dict) else "Sin Director"
+        e.pop("directores", None)
         resultados.append(e)
     return resultados
 
 
 def get_escuela_por_codigo(codigo: str):
     data = supabase.table("escuelas") \
-        .select("*, id_director(nombre)") \
+        .select("*, directores:id_director(nombre)") \
         .eq("codigo", codigo) \
         .single() \
         .execute()
+    
     if not data.data:
         return None
+    
     e = data.data
-    e["nombre_director"] = e["id_director"]["nombre"] if isinstance(e.get("id_director"), dict) else None
-    e.pop("id_director", None)
+    e["nombre_director"] = e["directores"]["nombre"] if isinstance(e.get("directores"), dict) else "Sin Director"
+    e.pop("directores", None)
     return e
 
 
@@ -40,7 +47,7 @@ def crear_escuela(payload: dict):
         if existente.data:
             return None, "Ya existe una escuela con ese código"
 
-        # Verificar que el director existe en la tabla director
+        # Verificar que el director existe en la tabla directores
         director = supabase.table("directores") \
             .select("id_unphu") \
             .eq("id_unphu", payload["id_director"]) \
@@ -62,12 +69,13 @@ def actualizar_escuela(codigo: str, payload: dict):
         if not payload_limpio:
             return None, "No hay campos para actualizar"
         
-        director = supabase.table("directores") \
-            .select("id_unphu") \
-            .eq("id_unphu", payload["id_director"]) \
-            .execute()
-        if not director.data:
-            return None, f"El director '{payload['id_director']}' no existe en el sistema"
+        if "id_director" in payload_limpio:
+            director = supabase.table("directores") \
+                .select("id_unphu") \
+                .eq("id_unphu", payload_limpio["id_director"]) \
+                .execute()
+            if not director.data:
+                return None, f"El director '{payload_limpio['id_director']}' no existe en el sistema"
 
         data = supabase.table("escuelas") \
             .update(payload_limpio) \

@@ -1,0 +1,160 @@
+/* ==========================================================================
+   ESTILOS DE SECCIONES - UNPHU BLACKBOX
+   ========================================================================== */
+
+.container {
+    width: 95%;
+    max-width: 1300px;
+    margin: 30px auto;
+}
+
+/* CABECERA GOLDEN */
+.header-tabla {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 40px;
+}
+
+.titulo-seccion h2 { font-size: 22px; color: #0B3C5D; margin: 0; line-height: 1; }
+.titulo-seccion h1 { font-size: 28px; color: #0B3C5D; margin: 0; font-weight: 900; }
+
+.btn-unphu-largo {
+    background-color: #006837;
+    color: white;
+    border: none;
+    padding: 12px 80px; 
+    font-size: 14px;
+    font-weight: bold;
+    min-width: 350px; 
+    border-radius: 4px;
+    cursor: pointer;
+    text-transform: uppercase;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: 0.3s;
+}
+
+/* ==========================================================================
+   ESTILOS DEL MODAL (ESTÁNDAR UNPHU)
+   ========================================================================== */
+
+.modal {
+    display: none; /* Se activa con el JS (display: flex) */
+    position: fixed;
+    z-index: 1000;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5); /* Fondo oscuro traslúcido */
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.modal-content {
+    background: white;
+    width: 100%;
+    max-width: 550px;
+    max-height: 90vh;
+    border-radius: 12px;
+    overflow-y: auto;
+    position: relative;
+    animation: aparecer 0.3s ease;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* Animación de entrada */
+@keyframes aparecer {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Bloqueo de scroll en el body al abrir */
+body.modal-open {
+    overflow: hidden;
+}
+
+/* Botón de cerrar (X) */
+.cerrar {
+    position: absolute;
+    right: 20px;
+    top: 15px;
+    font-size: 28px;
+    font-weight: bold;
+    color: #666;
+    cursor: pointer;
+    z-index: 10;
+}
+
+.cerrar:hover {
+    color: #dc3545;
+}
+
+/* Ajustes para el contenedor interno del formulario */
+.form-container.admin {
+    padding: 30px;
+    border-top: 8px solid #006837; /* Verde UNPHU */
+}
+
+/* TABLA AZUL MARINO */
+.card-tabla {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    padding: 20px;
+}
+
+#tablaSecciones { width: 100%; border-collapse: collapse; }
+#tablaSecciones thead { background: #0B3C5D; color: white; }
+#tablaSecciones th { padding: 15px; text-align: center; }
+#tablaSecciones td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; }
+
+/* ANCHO DE COLUMNAS */
+#tablaSecciones th:nth-child(1) { width: 15%; }
+#tablaSecciones th:nth-child(2) { width: 25%; }
+#tablaSecciones th:nth-child(3) { width: 20%; }
+#tablaSecciones th:nth-child(4) { width: 10%; }
+#tablaSecciones th:nth-child(5) { width: 10%; }
+#tablaSecciones th:nth-child(6) { width: 20%; }
+
+/* GESTIÓN DE HORARIOS (MANUAL) */
+.schedule-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    background: #f9f9f9;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+}
+
+.schedule-group select, 
+.schedule-group input[type="time"] {
+    padding: 5px !important;
+    font-size: 13px !important;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* Para que los inputs de hora no sean tan anchos */
+input[type="time"] {
+    min-width: 85px;
+}
+
+.btn-eliminar-fila {
+    background: #dc3545;
+    color: white;
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+/* BOTONES CRUD */
+.btn-editar { background: #ffc107; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 5px; }
+.btn-eliminar { background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+.estado-activa { color: #28a745; font-weight: bold; }
+.estado-inactiva { color: #dc3545; font-weight: bold; }

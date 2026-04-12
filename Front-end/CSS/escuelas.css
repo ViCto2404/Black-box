@@ -1,0 +1,169 @@
+/* ==========================================================================
+   ESTILOS DE ESCUELAS - BLACKBOX UNPHU (MOLDE DEFINITIVO)
+   ========================================================================== */
+
+/* CONTENEDOR PRINCIPAL */
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 30px auto;
+}
+
+/* CABECERA (TÍTULOS Y BOTÓN ALARGADO) */
+.header-tabla {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 40px;
+    margin-top: 20px;
+}
+
+.titulo-seccion h2 {
+    font-size: 22px;
+    color: #0B3C5D; /* Azul Marino */
+    margin: 0;
+    line-height: 1;
+}
+
+.titulo-seccion h1 {
+    font-size: 28px;
+    color: #0B3C5D;
+    margin: 0;
+    font-weight: 900;
+}
+
+.btn-unphu-largo {
+    background-color: #006837; /* Verde UNPHU */
+    color: white;
+    border: none;
+    padding: 12px 80px; 
+    font-size: 14px;
+    font-weight: bold;
+    min-width: 350px; 
+    border-radius: 4px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.btn-unphu-largo:hover {
+    background-color: #004f29;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* TARJETA Y TABLA */
+.card-tabla {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    padding: 20px;
+}
+
+#tablaEscuelas {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+#tablaEscuelas thead {
+    background: #0B3C5D;
+    color: white;
+}
+
+#tablaEscuelas th {
+    padding: 15px;
+    text-align: center;
+    font-weight: 600;
+}
+
+#tablaEscuelas td {
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+}
+
+#tablaEscuelas tbody tr:hover {
+    background-color: #f8fdfa;
+}
+
+/* ANCHOS DE COLUMNA ESPECÍFICOS PARA ESCUELAS */
+#tablaEscuelas th:nth-child(1) { width: 15%; } /* Código */
+#tablaEscuelas th:nth-child(2) { width: 35%; } /* Nombre */
+#tablaEscuelas th:nth-child(3) { width: 20%; } /* Director */
+#tablaEscuelas th:nth-child(4) { width: 10%; } /* Estado */
+#tablaEscuelas th:nth-child(5) { width: 20%; } /* Acciones */
+
+/* BOTONES DE ACCIÓN (TABLA) */
+.btn-editar {
+    background-color: #ffc107;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-right: 5px;
+    transition: 0.3s;
+}
+
+.btn-editar:hover {
+    background-color: #e0a800;
+}
+
+.btn-eliminar {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.btn-eliminar:hover {
+    background-color: #b71c1c;
+}
+
+/* ESTADOS DINÁMICOS */
+.estado-activa {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.estado-inactiva {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+/* MODAL Y OVERLAY */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 999;
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    width: 100%;
+    max-width: 550px;
+    animation: aparecer 0.3s ease;
+}
+
+@keyframes aparecer {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+body.modal-open {
+    overflow: hidden;
+}

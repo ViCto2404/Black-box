@@ -1,0 +1,271 @@
+:root {
+    --unphu-green: #006837;
+    --unphu-white: #ffffff;
+    --unphu-gray: #f2f2f2;
+}
+
+/* Evita desbordamientos */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--unphu-gray);
+    margin: 0;
+}
+
+.form-container {
+    max-width: 500px;
+    margin: 50px auto;
+    background: var(--unphu-white);
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border-top: 8px solid var(--unphu-green);
+}
+
+.form-header h2 {
+    color: var(--unphu-green);
+    margin-bottom: 5px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+/* Solo inputs normales */
+/* input:not([type="checkbox"]),
+select,
+textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+} */
+.feedback input:not([type="checkbox"]),
+.feedback select,
+.feedback textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+
+/* Altura mejorada para selector múltiple */
+select[multiple] {
+    height: 120px;
+}
+
+/* Checkbox alineado correctamente */
+/* .checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.checkbox label {
+    margin: 0;
+    font-weight: normal;
+}
+
+.checkbox input {
+    width: auto;
+} */
+
+.feedback .checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.feedback .checkbox input {
+    width: auto;
+}
+
+.feedback .checkbox label {
+    margin: 0;
+    font-weight: normal;
+}
+
+.admin .import-box {
+    margin-top: 20px;
+}
+
+.admin .drop-zone {
+    border: 2px dashed var(--unphu-green);
+    padding: 40px;
+    display: block;
+    text-align: center;
+    color: var(--unphu-green);
+    cursor: pointer;
+    background: #eef7f2;
+    border-radius: 6px;
+    transition: background 0.3s;
+}
+
+.admin .drop-zone:hover {
+    background: #dff0e8;
+}
+
+.admin .form-actions {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+.btn-secondary {
+    background: #ccc;
+    border: none;
+    padding: 12px 20px;
+    cursor: pointer;
+    font-weight: bold;
+    width: 100%;
+}
+
+/* Comentario */
+
+.feedback textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.feedback small {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+    color: #666;
+}
+
+
+/*Preview del archivo de excel en la vista de importacion*/
+
+.preview-section {
+    margin-top: 40px;
+}
+
+.preview-section h3 {
+    margin-bottom: 15px;
+    color: var(--unphu-green);
+}
+
+.preview-table-container {
+    overflow-x: auto;
+}
+
+.preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.preview-table th,
+.preview-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+}
+
+.preview-table th {
+    background: var(--unphu-green);
+    color: white;
+}
+
+.preview-table tr:nth-child(even) {
+    background: #f9f9f9;
+}
+
+/* Botón */
+.btn-unphu {
+    background: var(--unphu-green);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    width: 100%;
+    cursor: pointer;
+    font-weight: bold;
+    text-transform: uppercase;
+    border-radius: 4px;
+}
+
+.btn-unphu:hover {
+    background: #004f29;
+}
+
+/* Efecto focus moderno */
+input:focus,
+select:focus {
+    outline: none;
+    border-color: var(--unphu-green);
+    box-shadow: 0 0 5px rgba(0,104,55,0.3);
+}
+
+/*Vista de materias*/
+.admin input,
+.admin select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.admin .form-actions {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+.btn-secondary {
+    background: #ccc;
+    border: none;
+    padding: 12px 20px;
+    cursor: pointer;
+    font-weight: bold;
+    width: 100%;
+}
+
+/*Login*/
+
+.auth input,
+.auth select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+form-footer {
+    margin-top: 15px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.form-footer a {
+    color: var(--unphu-green);
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.form-footer a:hover {
+    text-decoration: underline;
+}
+
+/*Horario de la sección*/
+
+.schedule-group{
+    display: flex;
+    gap: 10px;
+}
+
+.schedule-group select,
+.schedule-group input{
+    flex: 1;
+}

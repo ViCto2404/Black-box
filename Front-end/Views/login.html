@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicio de Sesión - UNPHU</title>
+    <link rel="stylesheet" href="../CSS/Styles.css">
+    <link rel="stylesheet" href="../CSS/navbar.css">
+</head>
+<body>
+
+<div class="navbar">
+    <div class="left">
+        <button class="menu-btn" onclick="toggleMenu()">☰</button>
+        <a href="Home.html" class="logo">BLACKBOX</a>
+    </div>
+    <div class="right" id="nav-auth-section">
+        <a href="login.html">Login</a>
+        <a href="Register.html" class="btn-register">Register</a>
+    </div>
+</div>
+
+<div id="sidebar" class="sidebar">
+    <p class="logo">UNPHU</p>
+    <div class="sidebar-menu">
+        <button class="dropdown-btn">🎓 Gestión Académica ▼</button>
+        <div class="dropdown-container">
+            <a href="Escuela.html">Escuelas</a>
+            <a href="Carrera.html">Carreras</a>
+            <a href="Materias.html">Materias</a>
+            <a href="Seccion.html">Secciones</a>
+            <a href="Profesor.html">Profesores</a>
+            <a href="Director.html">Directores</a>
+        </div>
+        <button class="dropdown-btn">👨‍🎓 Estudiantes ▼</button>
+        <div class="dropdown-container">
+            <a href="Formularios.html">Formularios</a>
+        </div>
+        <button class="dropdown-btn">📊 administracion ▼</button>
+        <div class="dropdown-container">
+            <a href="directores.html">Directores</a>
+            <a href="importacion.html">Importación</a>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="form-container auth">
+        <div class="form-header">
+            <h2>UNPHU Academic Insights</h2>
+            <p>Acceso al Sistema</p>
+        </div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="usuario">Usuario</label>
+                <input type="email" id="email" placeholder="Ingrese su usuario" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Contraseña</label>
+                <input type="password" id="password" placeholder="Ingrese su contraseña" required>
+            </div>
+
+            <button type="submit" class="btn-unphu">Iniciar Sesión</button>
+
+            <div class="form-footer">
+                <p>¿No tienes cuenta? <a href="Register.html">Registrarse</a></p>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="../JS/auth.js"></script>
+<script src="../JS/navbar.js"></script>
+</body>
+</html>

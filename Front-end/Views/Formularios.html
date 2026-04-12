@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario</title>
+    <link rel="stylesheet" href="../CSS/Styles.css">
+</head>
+<body>
+<div class="navbar">
+    <div class="left">
+        <button class="menu-btn" onclick="toggleMenu()">☰</button>
+        <a href="Home.html" class="logo">BLACKBOX</a>
+    </div>
+    <div class="right" id="nav-auth-section">
+        <a href="login.html">Login</a>
+        <a href="Register.html" class="btn-register">Register</a>
+    </div>
+</div>
+
+    <div class="form-container feedback">
+
+        <div class="form-header">
+            <h2>UNPHU Academic Insights</h2>
+            <p>Buzón de Feedback Estudiantil</p>
+        </div>
+
+        <form id="feedbackForm">
+
+            <div class="form-group">
+                <label for="carrera">Carrera:</label>
+                <select name="carrera" id="carrera" required>
+                    <option value="">Seleccione su carrera</option>
+                    <option value="ISC">Ingeniería en Sistemas</option>
+                    <option value="ISC">Ingeniería Industrial</option>
+                    <option value="ISC">Ingeniería Civil</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="tipo">Tipo de Entrada:</label>
+                <select name="tipo" id="tipo" required>
+                    <option value="queja">Queja</option>
+                    <option value="sugerencia">Sugerencia</option>
+                </select>
+            </div>
+
+            <!-- Selector múltiple -->
+            <div class="form-group">
+                <label for="categoria">Seleccione los aspectos que desea evaluar:</label>
+                <select name="categoria" id="categoria" multiple required>
+                    <option value="docente">Docente</option>
+                    <option value="infraestructura">Infraestructura</option>
+                    <option value="servicio">Servicio estudiantil</option>
+                    <option value="plataforma">Plataforma virtual</option>
+                    <option value="horarios">Horarios</option>
+                </select>
+                <small>Puede seleccionar varias opciones manteniendo presionada la tecla Ctrl.</small>
+            </div>
+            <!-- Comentarios -->
+
+            <div class="form-group">
+                <label for="descripcion">Describa brevemente su caso:</label>
+                <textarea 
+                    name="descripcion" 
+                    id="descripcion" 
+                    maxlength="300" 
+                    required
+                    placeholder="Explique su queja o sugerencia con un máximo de 300 caracteres..."></textarea>
+                <small id="contador">0 / 300 caracteres</small>
+            </div>
+
+
+            <div class="form-group checkbox">
+                <input type="checkbox" id="anonimo" name="anonimo">
+                <label for="anonimo">Enviar de forma anónima</label>
+            </div>
+
+            <button type="submit" class="btn-unphu">Enviar</button>
+
+        </form>
+    </div>
+
+    <script>
+        const textarea = document.getElementById("descripcion");
+        const contador = document.getElementById("contador");
+
+        function actualizarContador() {
+            const texto = textarea.value;
+            contador.textContent = `${texto.length} / 300 caracteres`;
+        }
+
+        actualizarContador(); // Ejecuta al cargar
+
+        textarea.addEventListener("input", actualizarContador);
+    </script>
+</body>
+</html>

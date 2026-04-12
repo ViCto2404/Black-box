@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Directores - UNPHU</title>
+    <link rel="stylesheet" href="../CSS/directores.css">
+    <link rel="stylesheet" href="../CSS/navbar.css">
+    <link rel="stylesheet" href="../CSS/Styles.css">
+</head>
+<body>
+
+<div class="navbar">
+    <div class="left">
+        <button class="menu-btn" onclick="toggleMenu()">☰</button>
+        <a href="Home.html" class="logo">BLACKBOX</a>
+    </div>
+    <div class="right" id="nav-auth-section">
+        <a href="login.html">Login</a>
+        <a href="Register.html" class="btn-register">Register</a>
+    </div>
+</div>
+
+<div id="sidebar" class="sidebar">
+    <p class="logo">UNPHU</p>
+    <div class="sidebar-menu">
+        <button class="dropdown-btn">🎓 Gestión Académica ▼</button>
+        <div class="dropdown-container" style="display: block;"> <a href="Escuela.html">Escuelas</a>
+            <a href="Carrera.html">Carreras</a>
+            <a href="Materias.html">Materias</a>
+            <a href="Seccion.html">Secciones</a>
+            <a href="Profesor.html">Profesores</a>
+            <a href="Director.html">Directores</a>
+        </div>
+        <button class="dropdown-btn">👨‍🎓 Estudiantes ▼</button>
+        <div class="dropdown-container">
+            <a href="Estudiante.html">Estudiantes</a>
+        </div>
+        <button class="dropdown-btn">📊 Datos ▼</button>
+        <div class="dropdown-container">
+            <a href="importacion.html">Importación</a>
+        </div>
+        <button class="dropdown-btn">⚙ Cuenta ▼</button>
+        <div class="dropdown-container">
+            <a href="login.html">Login</a>
+            <a href="Register.html">Register</a>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="header-tabla">
+        <div class="titulo-seccion">
+            <h2>Gestión de</h2>
+            <h1>Directores</h1>
+        </div>
+        <button class="btn-unphu-largo" onclick="abrirModal()">+ NUEVO DIRECTOR</button>
+    </div>
+
+    <div class="card-tabla">
+        <div class="card-header">
+            <h3>Lista de Directores</h3>
+        </div>
+        <table id="tablaDirectores">
+            <thead>
+                <tr>
+                    <th>ID Director</th>
+                    <th>Nombre</th>
+                    <th>Correo</th>
+                    <th>Escuela Asignada</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<div id="modalDirector" class="modal">
+    <div class="modal-content">
+        <div class="form-container admin"> <span class="cerrar" onclick="cerrarModal()">&times;</span>
+            <div class="form-header">
+                <h2 id="modalTitle">Nuevo Director</h2>
+            </div>
+            <form id="crearDirectorForm">
+                <div class="form-group">
+                    <label>ID Director (Matrícula)</label>
+                    <input type="text" id="id_unphu" required placeholder="Ej: DIR-21-001">
+                </div>
+                <div class="form-group">
+                    <label>Nombre Completo</label>
+                    <input type="text" id="nombre" required>
+                </div>
+                <div class="form-group">
+                    <label>Correo Institucional</label>
+                    <input type="email" id="correo_institucional" required>
+                </div>
+                <div class="form-group">
+                    <label>Escuela (Opcional)</label>
+                    <select id="codigo_escuela">
+                        <option value="">Por asignar / Ninguna</option>
+                        </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-unphu">Guardar</button>
+                    <button type="button" class="btn-secondary" onclick="cerrarModal()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="../JS/directores.js"></script>
+<script src="../JS/navbar.js"></script>
+</body>
+</html>

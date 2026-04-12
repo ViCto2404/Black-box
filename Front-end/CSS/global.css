@@ -1,0 +1,276 @@
+/* --- VARIABLES Y BASES --- */
+:root {
+    --unphu-green: #006837;
+    --unphu-blue: #0B3C5D;
+    --unphu-blue-dark: #0F3D5E;
+    --bg-light: #F4F6F9;
+    --white: #ffffff;
+    --text-gray: #666;
+    --unphu-gray: #f2f2f2;
+}
+
+/* Evita desbordamientos y asegura modelo de caja correcto */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg-light);
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* Ocupa al menos el 100% de la pantalla */
+}
+
+/* El contenedor principal debe crecer para empujar al footer */
+.container, .container-dashboard {
+    flex: 1;
+}
+
+/* --- NAVBAR --- */
+.navbar {
+    background: var(--unphu-green);
+    color: white;
+    padding: 12px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.logo {
+    color: white;
+    font-size: 20px;
+    font-weight: 800;
+    text-decoration: none;
+    letter-spacing: 1px;
+}
+
+.menu-btn {
+    font-size: 24px;
+    margin-right: 20px;
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.menu-btn:hover { transform: scale(1.1); }
+
+.navbar .right a {
+    color: white;
+    margin-left: 15px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.btn-register {
+    background: var(--unphu-blue);
+    padding: 8px 18px;
+    border-radius: 4px;
+    transition: background 0.3s;
+}
+
+/* --- SIDEBAR --- */
+.sidebar {
+    position: fixed;
+    left: -260px;
+    top: 0;
+    width: 260px;
+    height: 100%;
+    background: var(--unphu-blue-dark);
+    transition: all 0.3s ease;
+    z-index: 2000;
+    padding-top: 20px; 
+    box-shadow: 4px 0 15px rgba(0,0,0,0.3);
+    overflow-y: auto; 
+}
+
+.sidebar.active {
+    left: 0;
+}
+
+.sidebar .sidebar-logo {
+    display: block;
+    text-align: center;
+    font-size: 24px;
+    color: white;
+    font-weight: bold;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 20px;
+}
+
+.sidebar-menu {
+    overflow-y: auto;
+    height: calc(100vh - 100px);
+}
+
+.dropdown-btn {
+    width: 100%;
+    padding: 12px 20px;
+    text-decoration: none;
+    font-size: 15px;
+    color: #ecf0f1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.dropdown-btn:hover {
+    background: var(--unphu-green);
+    padding-left: 25px;
+}
+
+.dropdown-container {
+    display: none;
+    background: rgba(0,0,0,0.2);
+    position: relative;
+    z-index: 2001;
+}
+
+.dropdown-container a {
+    padding: 10px 10px 10px 45px;
+    display: block;
+    color: #bdc3c7;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.dropdown-container a:hover { color: white; background: rgba(255,255,255,0.05); }
+
+/* --- ELEMENTOS COMUNES DE FORMULARIO (De Styles.css) --- */
+.form-container {
+    background: var(--white);
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border-top: 8px solid var(--unphu-green);
+}
+
+.form-header h2 {
+    color: var(--unphu-green);
+    margin-bottom: 5px;
+    margin-top: 0;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+input:not([type="checkbox"]),
+select,
+textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: inherit;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--unphu-green);
+    box-shadow: 0 0 5px rgba(0,104,55,0.3);
+}
+
+.form-actions {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+/* BOTONES GLOBALES */
+.btn-unphu {
+    background: var(--unphu-green);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    width: 100%;
+    cursor: pointer;
+    font-weight: bold;
+    text-transform: uppercase;
+    border-radius: 4px;
+    transition: background 0.3s;
+}
+
+.btn-unphu:hover {
+    background: #004f29;
+}
+
+.btn-secondary {
+    background: #ccc;
+    border: none;
+    padding: 12px 20px;
+    cursor: pointer;
+    font-weight: bold;
+    width: 100%;
+    border-radius: 4px;
+    color: #333;
+    text-align: center;
+    text-decoration: none;
+}
+
+.btn-secondary:hover {
+    background: #bbb;
+}
+
+/* --- FOOTER --- */
+.main-footer {
+    background-color: var(--unphu-blue-dark);
+    color: rgba(255, 255, 255, 0.8);
+    padding: 20px 0;
+    margin-top: 50px;
+    font-size: 13px;
+    border-top: 3px solid var(--unphu-green);
+}
+
+.footer-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.footer-left p, .footer-right p {
+    margin: 5px 0;
+}
+
+.footer-right {
+    text-align: right;
+}
+
+.footer-right a {
+    color: var(--unphu-green);
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s;
+}
+
+.footer-right a:hover {
+    color: white;
+}

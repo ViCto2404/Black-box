@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Estudiantes - UNPHU</title>
+    <link rel="stylesheet" href="../CSS/estudiantes.css">
+    <link rel="stylesheet" href="../CSS/navbar.css">
+    <link rel="stylesheet" href="../CSS/Styles.css">
+</head>
+<body>
+
+<div class="navbar">
+    <div class="left">
+        <button class="menu-btn" onclick="toggleMenu()">☰</button>
+        <a href="Home.html" class="logo">BLACKBOX</a>
+    </div>
+    <div class="right" id="nav-auth-section">
+        <a href="login.html">Login</a>
+        <a href="Register.html" class="btn-register">Register</a>
+    </div>
+</div>
+
+<div id="sidebar" class="sidebar">
+    <p class="logo">UNPHU</p>
+    <div class="sidebar-menu">
+        <button class="dropdown-btn">🎓 Gestión Académica ▼</button>
+        <div class="dropdown-container">
+            <a href="Escuela.html">Escuelas</a>
+            <a href="Carrera.html">Carreras</a>
+            <a href="Materias.html">Materias</a>
+            <a href="Seccion.html">Secciones</a>
+            <a href="Profesor.html">Profesores</a>
+        </div>
+
+        <button class="dropdown-btn">👨‍🎓 Estudiantes ▼</button>
+        <div class="dropdown-container" style="display: block;">
+            <a href="Estudiante.html">Gestión Estudiantes</a>
+        </div>
+
+        <button class="dropdown-btn">📊 Datos ▼</button>
+        <div class="dropdown-container">
+            <a href="importacion.html">Importación</a>
+        </div>
+
+        <button class="dropdown-btn">⚙ Cuenta ▼</button>
+        <div class="dropdown-container">
+            <a href="login.html">Login</a>
+            <a href="Register.html">Register</a>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="header-tabla">
+        <div class="titulo-seccion">
+            <h2>Gestión de</h2>
+            <h1>Estudiantes</h1>
+        </div>
+        <button class="btn-unphu-largo" onclick="abrirModal()">+ NUEVO ESTUDIANTE</button>
+    </div>
+
+    <div class="card-tabla">
+        <div class="card-header">
+            <h3>Lista de Estudiantes</h3>
+        </div>
+
+        <table id="tablaEstudiantes">
+            <thead>
+                <tr>
+                    <th>Matrícula (ID)</th>
+                    <th>Nombre</th>
+                    <th>Correo</th>
+                    <th>Carrera</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="modalEstudiante" class="modal">
+    <div class="modal-content">
+        <div class="form-container admin">
+            <span class="cerrar" onclick="cerrarModal()">&times;</span>
+            <div class="form-header">
+                <h2 id="modalTitle">Nuevo Estudiante</h2>
+            </div>
+
+            <form id="crearEstudianteForm">
+                <div class="form-group">
+                    <label>ID UNPHU</label>
+                    <input type="text" id="id_unphu" required placeholder="Ej: 21-0001">
+                </div>
+
+                <div class="form-group">
+                    <label>Nombre Completo</label>
+                    <input type="text" id="nombre" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Correo Institucional</label>
+                    <input type="email" id="correo_institucional">
+                </div>
+
+                <div class="form-group">
+                    <label>Carrera</label>
+                    <select id="codigo_carrera" required>
+                        <option value="">Seleccione Carrera</option>
+                        </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Estado</label>
+                    <select id="estado_activo">
+                        <option value="Activo">Activo</option>
+                        <option value="Inactivo">Inactivo</option>
+                    </select>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-unphu">Guardar</button>
+                    <button type="button" class="btn-secondary" onclick="cerrarModal()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="../JS/estudiantes.js"></script>
+<script src="../JS/navbar.js"></script>
+</body>
+</html>

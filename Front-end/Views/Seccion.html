@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Secciones</title>
+    <link rel="stylesheet" href="../CSS/secciones.css">
+    <link rel="stylesheet" href="../CSS/navbar.css">
+    <link rel="stylesheet" href="../CSS/Styles.css">
+</head>
+<body>
+
+<div class="navbar">
+    <div class="left">
+        <button class="menu-btn" onclick="toggleMenu()">☰</button>
+        <a href="Home.html" class="logo">BLACKBOX</a>
+    </div>
+    <div class="right" id="nav-auth-section">
+        <a href="login.html">Login</a>
+        <a href="Register.html" class="btn-register">Register</a>
+    </div>
+</div>
+
+<div id="sidebar" class="sidebar">
+    <p class="logo">UNPHU</p>
+    <div class="sidebar-menu">
+        <button class="dropdown-btn">🎓 Gestión Académica ▼</button>
+        <div class="dropdown-container">
+            <a href="Escuela.html">Escuelas</a>
+            <a href="Carrera.html">Carreras</a>
+            <a href="Materias.html">Materias</a>
+            <a href="Seccion.html">Secciones</a>
+            <a href="Profesor.html">Profesores</a>
+        </div>
+
+        <button class="dropdown-btn">👨‍🎓 Estudiantes ▼</button>
+        <div class="dropdown-container">
+            <a href="Formularios.html">Formularios</a>
+        </div>
+
+        <button class="dropdown-btn">📊 Datos ▼</button>
+        <div class="dropdown-container">
+            <a href="importacion.html">Importación</a>
+        </div>
+
+        <button class="dropdown-btn">⚙ Cuenta ▼</button>
+        <div class="dropdown-container">
+            <a href="login.html">Login</a>
+            <a href="Register.html">Register</a>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="header-tabla">
+        <div class="titulo-seccion">
+            <h2>Gestión de</h2>
+            <h1>Secciones</h1>
+        </div>
+        <button class="btn-unphu-largo" onclick="abrirModal()">+ NUEVA SECCIÓN</button>
+    </div>
+
+    <div class="card-tabla">
+        <div class="card-header">
+            <h3>Lista de Secciones</h3>
+        </div>
+        <table id="tablaSecciones">
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Materia</th>
+                    <th>Profesor</th>
+                    <th>Aula</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<div id="modalSeccion" class="modal">
+    <div class="modal-content">
+        <div class="form-container admin">
+            <span class="cerrar" onclick="cerrarModal()">&times;</span>
+            <div class="form-header">
+                <h2 id="modalTitle">Nueva Sección</h2>
+            </div>
+
+            <form id="crearSeccionForm">
+                <div class="form-group">
+                    <label>Código Sección</label>
+                    <input type="text" id="codigoSeccion" required placeholder="Ej: INF101-01">
+                </div>
+
+                <div class="form-group">
+                    <label>Materia</label>
+                    <select id="materiaSeccion" required>
+                        <option value="">Seleccione Materia</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Profesor</label>
+                    <select id="profesorSeccion" required>
+                        <option value="">Seleccione Profesor</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Aula</label>
+                    <input type="text" id="aula" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Cupo Máximo</label>
+                    <input type="number" id="cupoSeccion" min="1" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Estado</label>
+                    <select id="estadoSeccion">
+                        <option value="Activa">Activa</option>
+                        <option value="Cerrada">Cerrada</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <label style="margin: 0;">Horarios (Máx 3)</label>
+                        <button type="button" class="btn-editar" onclick="agregarHorario()" style="width: auto; padding: 5px 15px;">+ Agregar</button>
+                    </div>
+                    <div id="contenedorHorarios">
+                        </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-unphu">Guardar</button>
+                    <button type="button" class="btn-secondary" onclick="cerrarModal()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="../JS/secciones.js"></script>
+<script src="../JS/navbar.js"></script>
+</body>
+</html>

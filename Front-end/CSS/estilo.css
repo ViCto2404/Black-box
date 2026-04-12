@@ -1,0 +1,50 @@
+:root {
+    --unphu-green: #006837;
+    --unphu-white: #ffffff;
+    --unphu-gray: #f2f2f2;
+}
+
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--unphu-gray); }
+
+.form-container {
+    max-width: 500px;
+    margin: 50px auto;
+    background: var(--unphu-white);
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border-top: 8px solid var(--unphu-green); /* Identidad institucional */
+}
+
+.form-header h2 { color: var(--unphu-green); margin-bottom: 5px; }
+
+.form-group { margin-bottom: 20px; }
+.form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; }
+
+input, select, textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.btn-unphu {
+    background: var(--unphu-green);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    width: 100%;
+    cursor: pointer;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.drop-zone {
+    border: 2px dashed var(--unphu-green);
+    padding: 40px;
+    display: block;
+    text-align: center;
+    color: var(--unphu-green);
+    cursor: pointer;
+    background: #eef7f2;
+}

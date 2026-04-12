@@ -1,0 +1,135 @@
+/* Logo */
+
+.logo {
+    color: white;
+    font-size: 22px;
+    font-weight: bold;
+    text-decoration: none;
+    margin-left: 10px;
+}
+
+.logo:hover {
+    opacity: 0.8;
+}
+
+/* NAVBAR */
+.navbar {
+    background: #2E7D32;
+    color: white;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.navbar .left {
+    display: flex;
+    align-items: center;
+}
+
+.navbar .right a {
+    color: white;
+    margin-left: 15px;
+    text-decoration: none;
+}
+
+.btn-register {
+    background: #0B3C5D;
+    padding: 8px 15px;
+    border-radius: 5px;
+}
+
+.menu-btn {
+    font-size: 24px;
+    margin-right: 20px;
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+}
+
+.menu-title {
+    color: white;
+    background: #2E7D32;
+    margin: 15px 15px 5px 15px;
+    padding: 5px 10px;
+    font-size: 12px;
+    border-radius: 5px;
+    text-transform: uppercase;
+}
+
+/* Sidebar y hamburguesa */
+.sidebar {
+    position: fixed;
+    left: -250px;
+    top: 0;
+    width: 250px;
+    height: 100%;
+    background: #0F3D5E;
+    transition: 0.3s;
+    padding-top: 20px;
+    overflow-x: hidden;
+}
+
+.sidebar.active {
+    left: 0;
+}
+
+.sidebar-menu {
+    margin-top: 30px;
+}
+
+.sidebar a, .dropdown-btn {
+    padding: 12px 20px;
+    text-decoration: none;
+    color: white;
+    display: block;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.sidebar a:hover,
+.dropdown-btn:hover {
+    background: #2E7D32;
+    border-left: 4px solid #A5D6A7;
+}
+
+.dropdown-container {
+    display: none;
+    background: #124a6b;
+    
+}
+
+.dropdown-container a {
+    padding-left: 40px;
+    font-size: 14px;
+}
+
+.sidebar.show {
+    left: 0;
+}
+
+.user-welcome {
+    color: #0B3C5D; /* Azul Marino */
+    margin-right: 15px;
+    font-size: 14px;
+}
+
+.btn-logout {
+    color: #dc3545 !important; /* Rojo alerta */
+    font-weight: bold;
+    text-decoration: none;
+    padding: 5px 10px;
+    border: 1px solid #dc3545;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.btn-logout:hover {
+    background: #dc3545;
+    color: white !important;
+}

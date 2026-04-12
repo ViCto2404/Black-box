@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackBox - Home</title>
+    <link rel="stylesheet" href="../CSS/global.css">
+    <link rel="stylesheet" href="../CSS/Home.css">
+    <link rel="stylesheet" href="../CSS/navbar.css"> 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    </head>
+
+<body>
+
+<div class="navbar">
+    <div class="left">
+        <button class="menu-btn" onclick="toggleMenu()">☰</button>
+        <a href="Home.html" class="logo">BLACKBOX</a>
+    </div>
+    <div class="right" id="nav-auth-section">
+        <a href="login.html">Login</a>
+        <a href="Register.html" class="btn-register">Register</a>
+    </div>
+</div>
+
+<div id="sidebar" class="sidebar">
+    <p class="logo">UNPHU</p>
+    <div class="sidebar-menu">
+        <button class="dropdown-btn">🎓 Gestión Académica ▼</button>
+        <div class="dropdown-container">
+            <a href="Escuela.html">Escuelas</a>
+            <a href="Carrera.html">Carreras</a>
+            <a href="Materias.html">Materias</a>
+            <a href="Seccion.html">Secciones</a>
+            <a href="Profesor.html">Profesores</a>
+        </div>
+
+        <button class="dropdown-btn">👨‍🎓 Estudiantes ▼</button>
+        <div class="dropdown-container">
+            <a href="Formularios.html">Formularios</a>
+            <a href="estudiantes.html">Estudiantes</a>
+        </div>
+
+        <button class="dropdown-btn">📊 Administracion ▼</button>
+        <div class="dropdown-container">
+            <a href="directores.html">Directores</a>
+            <a href="importacion.html">Importación</a>
+        </div>
+    </div>
+</div>
+
+<div class="container-dashboard">
+    <div class="header-dashboard">
+        <div class="titulo-seccion">
+            <h2>Panel de</h2>
+            <h1>Analítica Académica</h1>
+        </div>
+        <div class="filtros-container">
+            <label for="filtroPeriodo">Período Académico</label>
+            <div class="select-wrapper">
+                <select id="filtroPeriodo" onchange="actualizarDashboard()">
+                    <option value="01-2025">2025-1 (Más reciente)</option>
+                    <option value="03-2024">2024-3</option>
+                    <option value="02-2024">2024-2</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="report-section">
+        <div class="card-report">
+            <div class="report-info">
+                <h3>Reportes Ejecutivos</h3>
+                <p>Selecciona el tipo de informe y el período para generar un documento detallado.</p>
+            </div>
+            <div class="report-controls">
+                <div class="select-wrapper dark">
+                    <select id="tipoReporte">
+                        <option value="resumen">Resumen del Período</option>
+                        <option value="rendimiento">Rendimiento por Materia</option>
+                        <option value="criticas">Materias Críticas</option>
+                        <option value="feedback">Feedback Estudiantil</option>
+                    </select>
+
+                </div>
+                <div class="select-wrapper export">
+                    <select id="formatoReporte" onchange="descargarReporte()">
+                        <option value="" disabled selected>📄 EXPORTAR REPORTE</option>
+                        <option value="pdf">Como PDF (.pdf)</option>
+                        <option value="excel">Como Excel (.xlsx)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-kpis">
+        <div class="card">
+            <h3>Promedio General</h3>
+            <p id="promedio">--</p>
+        </div>
+        <div class="card">
+            <h3>Tasa Aprobación</h3>
+            <p id="tasaAprobacion">--%</p>
+        </div>
+        <div class="card">
+            <h3>Total Estudiantes</h3>
+            <p id="totalEstudiantes">--</p>
+        </div>
+        <div class="card">
+            <h3>Materias Críticas</h3>
+            <p id="materiasCriticas">--</p>
+        </div>
+    </div>
+
+    <div class="graficos-grid">
+        <div class="card-chart">
+            <h3>Distribución de Masa Estudiantil</h3>
+            <canvas id="chartMasa"></canvas>
+        </div>
+        <div class="card-chart">
+            <h3>Rendimiento por Materia</h3>
+            <canvas id="chartRendimiento"></canvas>
+        </div>
+    </div>
+</div>
+
+<footer class="main-footer">
+    <div class="footer-content">
+        <div class="footer-left">
+            <p><strong>UNPHU</strong> - Universidad Nacional Pedro Henríquez Ureña</p>
+            <p>Av. John F. Kennedy, Km 7 1/2, Santo Domingo, R.D.</p>
+        </div>
+        <div class="footer-right">
+            <p>&copy; 2026 BlackBox Project. Todos los derechos reservados.</p>
+            <a href="https://unphu.edu.do" target="_blank">unphu.edu.do</a>
+        </div>
+    </div>
+</footer>
+
+<script src="../JS/config.js"></script>
+<script src="../JS/Home Page.js"></script>
+<script src="../JS/auth.js"></script>
+<script src="../JS/navbar.js"></script>
+<script src="../JS/reporte.js"></script>
+</body>
+</html>
