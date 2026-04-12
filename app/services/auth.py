@@ -26,17 +26,46 @@ def login(email: str, password: str):
             return None, "El usuario no tiene un perfil asignado en el sistema"
 
         rol     = perfil.data["rol"]
-        id_unphu = perfil.data["id_unphu"]
+        id_unphu = str(perfil.data["id_unphu"]).strip()
 
-        # Obtener el nombre según el rol
-        nombre = _get_nombre(rol, id_unphu)
+        # Obtener el nombre y otros datos según el rol
+        nombre = "Usuario"
+        codigo_escuela = None
+
+        if rol == "estudiante":
+            data = supabase.table("estudiantes") \
+                .select("nombre") \
+                .eq("id_unphu", id_unphu) \
+                .single() \
+                .execute()
+            if data.data:
+                nombre = data.data["nombre"]
+        elif rol == "director":
+            # Búsqueda más robusta en directores
+            data = supabase.table("directores") \
+                .select("*") \
+                .eq("id_unphu", id_unphu) \
+                .execute()
+            
+            if data.data and len(data.data) > 0:
+                director = data.data[0]
+                nombre = director.get("nombre", "Director")
+                codigo_escuela = director.get("codigo_escuela")
+                print(f"DEBUG: Director encontrado: {nombre}, Escuela: {codigo_escuela}")
+            else:
+                print(f"DEBUG: No se encontró registro en 'directores' para ID: {id_unphu}")
+        elif rol == "administrador":
+            nombre = "Administrador"
+
+        print(f"DEBUG LOGIN: Rol={rol}, Escuela={codigo_escuela}")
 
         return {
             "access_token": access_token,
             "token_type":   "bearer",
             "rol":          rol,
             "id_unphu":     id_unphu,
-            "nombre":       nombre
+            "nombre":       nombre,
+            "codigo_escuela": codigo_escuela
         }, None
 
     except Exception as e:

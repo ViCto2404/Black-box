@@ -10,6 +10,7 @@ class LoginResponse(BaseModel):
     rol: str
     id_unphu: str
     nombre: str
+    codigo_escuela: str | None = None
 
 class AdminCreate(BaseModel):
     id_unphu: str

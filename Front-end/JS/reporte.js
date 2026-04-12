@@ -6,6 +6,9 @@ async function descargarReporte() {
     const tipoReporte = document.getElementById("tipoReporte").value;
     const formatoSelector = document.getElementById("formatoReporte");
     const formato = formatoSelector.value;
+    
+    const userRole = localStorage.getItem("userRole");
+    const codigoEscuela = localStorage.getItem("codigoEscuela");
 
     // Si no hay formato seleccionado (ej. al inicio), no hacemos nada
     if (!formato) return;
@@ -18,22 +21,27 @@ async function descargarReporte() {
     try {
         let endpoint = "";
         let nombreArchivo = "";
+        
+        let extraParams = `&format=${formato}`;
+        if (userRole === "director" && codigoEscuela) {
+            extraParams += `&codigo_escuela=${codigoEscuela}`;
+        }
 
         // Mapeo dinámico según el tipo y periodo
         if (tipoReporte === "resumen") {
-            endpoint = `/reportes/resumen/${periodo}?format=${formato}`;
+            endpoint = `/reportes/resumen/${periodo}?${extraParams.substring(1)}`;
             nombreArchivo = `Resumen_Academico_${periodo}.${formato === 'excel' ? 'xlsx' : 'pdf'}`;
         } else if (tipoReporte === "rendimiento") {
-            endpoint = `/reportes/rendimiento/${periodo}?format=${formato}`;
+            endpoint = `/reportes/rendimiento/${periodo}?${extraParams.substring(1)}`;
             nombreArchivo = `Rendimiento_Asignaturas_${periodo}.${formato === 'excel' ? 'xlsx' : 'pdf'}`;
         } else if (tipoReporte === "criticas") {
-            endpoint = `/reportes/criticas/${periodo}?format=${formato}`;
+            endpoint = `/reportes/criticas/${periodo}?${extraParams.substring(1)}`;
             nombreArchivo = `Materias_Criticas_${periodo}.${formato === 'excel' ? 'xlsx' : 'pdf'}`;
         } else if (tipoReporte === "masa") {
-            endpoint = `/reportes/masa/${periodo}?format=${formato}`;
+            endpoint = `/reportes/masa/${periodo}?${extraParams.substring(1)}`;
             nombreArchivo = `Masa_Estudiantil_${periodo}.${formato === 'excel' ? 'xlsx' : 'pdf'}`;
         } else if (tipoReporte === "feedback") {
-            endpoint = `/reportes/feedback?format=${formato}`;
+            endpoint = `/reportes/feedback?${extraParams.substring(1)}`;
             nombreArchivo = `Feedback_Estudiantil.${formato === 'excel' ? 'xlsx' : 'pdf'}`;
         }
 

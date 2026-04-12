@@ -69,13 +69,26 @@ def get_materias_criticas(periodo: str, codigo_escuela: str= None, codigo_carrer
     return df_criticas[columnas_solicitadas].sort_values("porcentaje_reprobacion", ascending=False).to_dict(orient="records")
 
 def get_resumen_periodo(periodo: str, escuela: str = None):
+    print(f"DEBUG: get_resumen_periodo - Periodo: {periodo}, Escuela: {escuela}")
     # Consulta directa sin transformaciones raras
     if not escuela:
         query = supabase.table("calificacion").select("nota, id_seccion").eq("periodo_academico", periodo)
     else:
+        # Intentar filtrar por escuela a través de materia y carreras
         query = supabase.table("calificacion").select("nota, id_seccion, materia!inner(carreras!inner(codigo_escuela))").eq("periodo_academico", periodo).eq("materia.carreras.codigo_escuela", escuela)
 
-    data = _ejecutar_query(query)
+    try:
+        data = _ejecutar_query(query)
+    except Exception as e:
+        print(f"ERROR en query de resumen: {str(e)}")
+        return {
+            "total_secciones_analizadas": 0,
+            "secciones_criticas": 0,
+            "promedio_general": 0.0,
+            "indice_aprobacion": 0.0,
+            "error": str(e),
+            "debug_params": {"periodo": periodo, "escuela": escuela}
+        }
 
     if not data:
         return {
@@ -83,7 +96,7 @@ def get_resumen_periodo(periodo: str, escuela: str = None):
             "secciones_criticas": 0,
             "promedio_general": 0.0,
             "indice_aprobacion": 0.0,
-            "debug_msg": f"No data found for period: {periodo}"
+            "debug_msg": f"No data found for period: {periodo}, escuela: {escuela}"
         }
     
     df = pd.DataFrame(data)

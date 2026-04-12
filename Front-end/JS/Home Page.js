@@ -2,12 +2,39 @@
 Chart.register(ChartDataLabels);
 
 let chartMasa, chartRendimiento;
-
 async function actualizarDashboard() {
     const periodo = document.getElementById("filtroPeriodo").value;
-    const urlResumen = `${API_URL}/dashboard/resumen/${periodo}`;
-    
-    console.log("Consultando API:", urlResumen);
+
+    // Obtener datos de sesión
+    const rawRole = localStorage.getItem("userRole") || "";
+    const userRole = rawRole.toLowerCase().trim();
+    const codigoEscuela = localStorage.getItem("codigoEscuela");
+
+    let params = "";
+    let params_rendimiento = "";
+
+    console.log("--- DASHBOARD DEBUG ---");
+    console.log("Periodo:", periodo);
+    console.log("Rol Detectado:", userRole);
+    console.log("Escuela en Storage:", codigoEscuela);
+
+    // Si es director, FORZAR el filtro de escuela
+    if (userRole === "director") {
+        if (codigoEscuela && codigoEscuela !== "null" && codigoEscuela !== "undefined") {
+            params = `?escuela=${codigoEscuela}`;
+            params_rendimiento = `?codigo_escuela=${codigoEscuela}`;
+            console.log("Filtros de Director APLICADOS:", { params, params_rendimiento });
+        } else {
+            console.error("ALERTA: El usuario es DIRECTOR pero no tiene un CODIGO DE ESCUELA asignado.");
+            alert("Atención: No se ha detectado su código de escuela. Los datos podrían ser incompletos.");
+        }
+    } else {
+        console.log("Usuario es Administrador o Estudiante, cargando datos globales.");
+    }
+
+    const urlResumen = `${API_URL}/dashboard/resumen/${periodo}${params}`;
+    console.log("URL Final Resumen:", urlResumen);
+    console.log("-----------------------");
 
     // 1. Cargar Resumen (KPIs)
     fetch(urlResumen)
@@ -28,6 +55,8 @@ async function actualizarDashboard() {
         .catch(err => console.error("Error en resumen:", err));
 
     // 2. Gráfico de Masa Estudiantil
+    // Para masa estudiantil, si es director, quizas queramos filtrar por las carreras de su escuela
+    // Por ahora lo dejamos general o si el API soporta carrera, podriamos filtrar.
     fetch(`${API_URL}/dashboard/masa-estudiantil`)
         .then(res => res.json())
         .then(data => {
@@ -38,7 +67,7 @@ async function actualizarDashboard() {
         .catch(err => console.error("Error en masa estudiantil:", err));
 
     // 3. Gráfico de Rendimiento
-    fetch(`${API_URL}/dashboard/rendimiento/${periodo}`)
+    fetch(`${API_URL}/dashboard/rendimiento/${periodo}${params_rendimiento}`)
         .then(res => res.json())
         .then(data => {
             const labels = data.map(i => i.nombre_materia || i.codigo_materia);
@@ -46,6 +75,28 @@ async function actualizarDashboard() {
             dibujarChartRendimiento(labels, valores);
         })
         .catch(err => console.error("Error en rendimiento:", err));
+}
+
+// Restricciones de interfaz para el Director
+function aplicarRestriccionesDirector() {
+    const userRole = localStorage.getItem("userRole");
+    if (userRole === "director") {
+        // Ocultar secciones de gestión en el sidebar
+        const sidebar = document.getElementById("sidebar");
+        if (sidebar) {
+            const gestionBtn = sidebar.querySelector(".dropdown-btn:nth-of-type(1)");
+            const datosBtn = sidebar.querySelector(".dropdown-btn:nth-of-type(3)");
+            
+            if (gestionBtn) {
+                gestionBtn.style.display = "none";
+                gestionBtn.nextElementSibling.style.display = "none";
+            }
+            if (datosBtn) {
+                datosBtn.style.display = "none";
+                datosBtn.nextElementSibling.style.display = "none";
+            }
+        }
+    }
 }
 
 // FUNCIONES PARA DIBUJAR LOS GRÁFICOS
@@ -138,4 +189,7 @@ function dibujarChartRendimiento(labels, data) {
 }
 
 // Iniciar al cargar
-document.addEventListener("DOMContentLoaded", actualizarDashboard);
+document.addEventListener("DOMContentLoaded", () => {
+    aplicarRestriccionesDirector();
+    actualizarDashboard();
+});

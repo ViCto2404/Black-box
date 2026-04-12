@@ -28,12 +28,25 @@ if (loginForm) {
             return res.json();
         })
         .then(data => {
+            console.log("DEBUG: Respuesta JSON del servidor:", JSON.stringify(data, null, 2));
+            
+            // Limpiar datos previos para evitar basura de sesiones anteriores
+            localStorage.clear();
+
             // Guardamos los datos según tu LoginResponse
-            // access_token es vital para futuras peticiones protegidas
             localStorage.setItem("token", data.access_token);
             localStorage.setItem("userRole", data.rol);
             localStorage.setItem("userName", data.nombre);
             localStorage.setItem("id_unphu", data.id_unphu);
+            
+            console.log("DEBUG: Valor de codigo_escuela recibido:", data.codigo_escuela);
+            
+            if (data.codigo_escuela) {
+                localStorage.setItem("codigoEscuela", data.codigo_escuela);
+                console.log("DEBUG: codigoEscuela guardado exitosamente en localStorage:", localStorage.getItem("codigoEscuela"));
+            } else {
+                console.warn("DEBUG: El campo codigo_escuela es NULL o UNDEFINED en la respuesta.");
+            }
 
             alert(`Bienvenido, ${data.nombre}`);
 
@@ -66,7 +79,7 @@ if (registerForm) {
 
         // Nota: Verifica si tu router de registro también usa el prefijo /auth
         // Si no lo usa, quita el '/auth' de la URL
-        fetch(`${API}/auth/register`, { 
+        fetch(`${API_URL}/auth/register`, { 
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
@@ -90,7 +103,7 @@ function cerrarSesion() {
     const token = localStorage.getItem("token");
 
     // REGLA: Enviamos la petición al servidor para invalidar el token
-    fetch(`${API}/auth/logout`, {
+    fetch(`${API_URL}/auth/logout`, {
         method: "POST",
         headers: { 
             // Tal cual lo pide tu FastAPI: Header(...)
