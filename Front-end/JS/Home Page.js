@@ -4,6 +4,7 @@ Chart.register(ChartDataLabels);
 let chartMasa, chartRendimiento;
 async function actualizarDashboard() {
     const periodo = document.getElementById("filtroPeriodo").value;
+    const carreraSeleccionada = document.getElementById("filtroCarreraRendimiento").value;
 
     // Obtener datos de sesión
     const rawRole = localStorage.getItem("userRole") || "";
@@ -28,8 +29,11 @@ async function actualizarDashboard() {
             console.error("ALERTA: El usuario es DIRECTOR pero no tiene un CODIGO DE ESCUELA asignado.");
             alert("Atención: No se ha detectado su código de escuela. Los datos podrían ser incompletos.");
         }
-    } else {
-        console.log("Usuario es Administrador o Estudiante, cargando datos globales.");
+    }
+
+    // Agregar filtro de carrera si se seleccionó una
+    if (carreraSeleccionada) {
+        params_rendimiento += (params_rendimiento ? "&" : "?") + `codigo_carrera=${carreraSeleccionada}`;
     }
 
     const urlResumen = `${API_URL}/dashboard/resumen/${periodo}${params}`;
@@ -67,16 +71,58 @@ async function actualizarDashboard() {
         })
         .catch(err => console.error("Error en masa estudiantil:", err));
 
-    // 3. Gráfico de Rendimiento
+    // 3. Gráfico de Rendimiento (TOP 5 PEOR RENDIMIENTO)
     fetch(`${API_URL}/dashboard/rendimiento/${periodo}${params_rendimiento}`)
         .then(res => res.json())
         .then(data => {
-            const labels = data.map(i => i.nombre_materia || i.codigo_materia);
-            const valores = data.map(i => i.promedio);
+            // 1. Primero tomamos las 5 con el promedio ABSOLUTO más bajo
+            // 2. Luego las ordenamos de mayor a menor (dentro de esas 5) para la visualización
+            const top5Peores = data
+                .sort((a, b) => a.promedio - b.promedio) // Menor a mayor absoluto
+                .slice(0, 5)                             // Tomamos las 5 peores
+                .sort((a, b) => b.promedio - a.promedio); // Ordenamos mayor a menor para el gráfico
+
+            const labels = top5Peores.map(i => i.nombre_materia || i.codigo_materia);
+            const valores = top5Peores.map(i => i.promedio);
             dibujarChartRendimiento(labels, valores);
         })
         .catch(err => console.error("Error en rendimiento:", err));
 }
+
+// Cargar carreras disponibles en el selector
+async function cargarCarrerasFiltro() {
+    const selector = document.getElementById("filtroCarreraRendimiento");
+    if (!selector) return;
+
+    const userRole = (localStorage.getItem("userRole") || "").toLowerCase().trim();
+    const codigoEscuela = localStorage.getItem("codigoEscuela");
+
+    let url = `${API_URL}/carreras/`;
+    if (userRole === "director" && codigoEscuela) {
+        url += `?codigo_escuela=${codigoEscuela}`;
+    }
+
+    try {
+        const res = await fetch(url);
+        const carreras = await res.json();
+        
+        carreras.forEach(c => {
+            const opt = document.createElement("option");
+            opt.value = c.codigo;
+            opt.textContent = c.nombre;
+            selector.appendChild(opt);
+        });
+    } catch (err) {
+        console.error("Error cargando carreras para filtro:", err);
+    }
+}
+
+// Iniciar al cargar
+document.addEventListener("DOMContentLoaded", () => {
+    cargarCarrerasFiltro();
+    aplicarRestriccionesDirector();
+    actualizarDashboard();
+});
 
 // Restricciones de interfaz para el Director
 function aplicarRestriccionesDirector() {
@@ -159,7 +205,10 @@ function dibujarChartRendimiento(labels, data) {
             datasets: [{
                 label: 'Promedio de Calificación',
                 data: data,
-                backgroundColor: '#006837'
+                backgroundColor: '#006837',
+                borderRadius: 5,
+                barThickness: 'flex',
+                maxBarThickness: 50
             }]
         },
         options: {
@@ -167,23 +216,32 @@ function dibujarChartRendimiento(labels, data) {
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    display: true,
-                    position: 'bottom',
-                    labels: {
-                        boxWidth: 12,
-                        padding: 20,
-                        font: { size: 12 }
-                    }
+                    display: false // Ocultamos la leyenda para ganar espacio
                 },
                 datalabels: {
-                    display: false // No queremos porcentajes en el gráfico de barras
+                    display: true,
+                    anchor: 'end',
+                    align: 'top',
+                    color: '#006837',
+                    font: { weight: 'bold' },
+                    formatter: (value) => Number(value).toFixed(1)
                 }
             },
             scales: { 
                 y: { 
                     beginAtZero: true, 
-                    max: 100 
-                } 
+                    max: 100,
+                    grid: { display: false }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        autoSkip: false,
+                        maxRotation: 45,
+                        minRotation: 0,
+                        font: { size: 11 }
+                    }
+                }
             }
         }
     });

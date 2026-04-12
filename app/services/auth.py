@@ -72,7 +72,7 @@ def login(email: str, password: str):
             "nombre":       nombre,
             "codigo_escuela": codigo_escuela,
             "codigo_carrera": codigo_carrera,
-            "estado":       estado
+            "estado":       str(estado).lower().strip()
         }, None
 
     except Exception as e:

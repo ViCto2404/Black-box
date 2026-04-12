@@ -13,7 +13,7 @@ def rendimiento_materias(
     codigo_escuela: str = Query(default=None),
     codigo_carrera: str = Query(default=None)
 ):
-    return analisis.get_rendimiento_por_materia(periodo, codigo_escuela, codigo_carrera=None)
+    return analisis.get_rendimiento_por_materia(periodo, codigo_escuela, codigo_carrera)
 
 @router.get("/criticas/{periodo}")
 def materias_criticas(

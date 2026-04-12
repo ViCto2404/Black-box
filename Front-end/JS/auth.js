@@ -55,14 +55,19 @@ if (loginForm) {
                 localStorage.setItem("userStatus", data.estado);
             }
 
-            alert(`Bienvenido, ${data.nombre}`);
-
             const rol = data.rol.toLowerCase().trim();
             const estado = (data.estado || "activo").toLowerCase().trim();
             const escuela = data.codigo_escuela;
 
+            console.log("DEBUG REDIRECT: Rol:", rol);
+            console.log("DEBUG REDIRECT: Estado:", estado);
+            console.log("DEBUG REDIRECT: Escuela:", escuela);
+
+            alert(`Bienvenido, ${data.nombre}`);
+
             // LÓGICA DE REDIRECCIÓN CENTRALIZADA
             if (estado === "inactivo") {
+                console.log("REDIRECCIONANDO A: acceso_restringido.html (USUARIO INACTIVO)");
                 window.location.href = "acceso_restringido.html";
             } 
             else if (rol === "estudiante") {
@@ -118,6 +123,44 @@ if (registerForm) {
             window.location.href = "login.html";
         })
         .catch(err => alert(err.message));
+    });
+}
+
+// --- Lógica de Cambio de Contraseña ---
+const changePasswordForm = document.getElementById("changePasswordForm");
+
+if (changePasswordForm) {
+    changePasswordForm.addEventListener("submit", function(e) {
+        e.preventDefault();
+
+        const payload = {
+            email: document.getElementById("email").value,
+            password_actual: document.getElementById("password_actual").value,
+            password_nuevo: document.getElementById("password_nuevo").value,
+            password_nuevo_confirmacion: document.getElementById("password_confirmacion").value
+        };
+
+        if (payload.password_nuevo !== payload.password_nuevo_confirmacion) {
+            alert("Las nuevas contraseñas no coinciden.");
+            return;
+        }
+
+        fetch(`${API_URL}/auth/cambiar-password`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        })
+        .then(async res => {
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.detail || "Error al actualizar la contraseña");
+            }
+            alert("Contraseña actualizada correctamente. ¡Ya puedes iniciar sesión con tu nueva contraseña!");
+            window.location.href = "login.html";
+        })
+        .catch(err => {
+            alert("Error: " + err.message);
+        });
     });
 }
 

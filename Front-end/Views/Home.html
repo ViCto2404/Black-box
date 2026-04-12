@@ -116,12 +116,21 @@
 
     <div class="graficos-grid">
         <div class="card-chart">
-            <h3>Distribución de Masa Estudiantil</h3>
-            <canvas id="chartMasa"></canvas>
+            <h3 style="margin-bottom: 15px;">Distribución de Masa Estudiantil</h3>
+            <div class="chart-wrapper" style="position: relative; height: 300px; width: 100%;">
+                <canvas id="chartMasa"></canvas>
+            </div>
         </div>
         <div class="card-chart">
-            <h3>Rendimiento por Materia</h3>
-            <canvas id="chartRendimiento"></canvas>
+            <div class="chart-header-custom" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0;">Top 5 Materias Peor Rendimiento</h3>
+                <select id="filtroCarreraRendimiento" onchange="actualizarDashboard()" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc;">
+                    <option value="">Todas las Carreras</option>
+                </select>
+            </div>
+            <div class="chart-wrapper" style="position: relative; height: 300px; width: 100%;">
+                <canvas id="chartRendimiento"></canvas>
+            </div>
         </div>
     </div>
 </div>
