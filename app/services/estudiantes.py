@@ -1,4 +1,5 @@
 import pandas as pd
+from io import BytesIO
 from app.database.supabase_client import supabase
 
 def get_todos_estudiantes(codigo_carrera: str = None, estado: str = None):
@@ -121,3 +122,38 @@ def eliminar_estudiante(id_unphu: str):
         return False, "Estudiante no encontrado"
     
     return True, None
+
+def carga_masiva_estudiantes(registros: list):
+    if not registros:
+        return {"insertados": 0, "errores": []}
+
+    errores = []
+    insertados = 0
+
+    for r in registros:
+        resultado, error = crear_estudiante(r)
+        if error:
+            errores.append(f"Error en {r['id_unphu']}: {error}")
+        else:
+            insertados += 1
+
+    return {"insertados": insertados, "errores": errores}
+
+def generar_plantilla_estudiante():
+    columnas = ["id_unphu", "nombre", "codigo_carrera", "estado_activo", "correo_institucional"]
+    df = pd.DataFrame(columns=columnas)
+
+    ejemplo = {
+        "id_unphu": "20-0001",
+        "nombre": "Juan Perez",
+        "codigo_carrera": "INF",
+        "estado_activo": "Activo",
+        "correo_institucional": "j.perez@unphu.edu.do"
+    }
+    df.loc[0] = ejemplo
+
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Plantilla Estudiantes')
+
+    return output.getvalue()

@@ -1,4 +1,5 @@
 import pandas as pd
+from io import BytesIO
 from app.database.supabase_client import supabase
 
 
@@ -128,6 +129,10 @@ def carga_masiva(registros: list):
             errores.append(f"Sección {r['id_seccion']} no corresponde a materia {r['codigo_materia']}")
             continue
 
+        if sec["periodo"] != r["periodo_academico"]:
+            errores.append(f"Periodo {r['periodo_academico']} no coincide con el periodo de la sección {sec['periodo']}")
+            continue
+
         existente = supabase.table("calificacion") \
             .select("id") \
             .eq("id_estudiante",     r["id_estudiante"]) \
@@ -147,3 +152,25 @@ def carga_masiva(registros: list):
             errores.append(f"Error al insertar: {r['id_estudiante']} — {r['codigo_materia']}")
 
     return {"insertados": insertados, "errores": errores}
+
+
+def generar_plantilla_excel():
+    columnas = ["id_estudiante", "codigo_materia", "id_seccion", "nota", "periodo_academico"]
+    # Crear un DataFrame vacío con las columnas
+    df = pd.DataFrame(columns=columnas)
+    
+    # Agregar una fila de ejemplo
+    ejemplo = {
+        "id_estudiante": "20-0001",
+        "codigo_materia": "INF-101",
+        "id_seccion": 1,
+        "nota": 85.5,
+        "periodo_academico": "2024-1"
+    }
+    df.loc[0] = ejemplo
+
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Plantilla')
+    
+    return output.getvalue()

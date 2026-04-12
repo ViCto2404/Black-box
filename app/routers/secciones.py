@@ -1,8 +1,19 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, UploadFile, File, Response
+from typing import Annotated
 from app.services import secciones as svc
+from app.services.validacion import procesar_archivo_secciones
 from app.models.seccion import SeccionCreate, SeccionUpdate
 
 router = APIRouter(prefix="/secciones", tags=["Secciones"])
+
+@router.get("/plantilla")
+def descargar_plantilla():
+    contenido = svc.generar_plantilla_seccion()
+    return Response(
+        content=contenido,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=plantilla_secciones.xlsx"}
+    )
 
 @router.get("/")
 def listar_secciones(
@@ -38,3 +49,37 @@ def eliminar_seccion(id: int):
     ok, error = svc.eliminar_seccion(id)
     if error:
         raise HTTPException(status_code=404, detail=error)
+
+@router.post("/carga-masiva")
+async def carga_masiva(archivo: Annotated[UploadFile, File()]):
+    if not archivo.filename.endswith((".csv", ".xlsx", ".xls")):
+        raise HTTPException(
+            status_code=400,
+            detail="Formato no soportado. Use CSV o Excel (.csv, .xlsx, .xls)"
+        )
+
+    contenido = await archivo.read()
+
+    if len(contenido) == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="El archivo está vacío"
+        )
+
+    registros, errores_validacion = procesar_archivo_secciones(contenido, archivo.filename)
+
+    if errores_validacion:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "mensaje": "El archivo contiene errores de validación",
+                "errores": errores_validacion
+            }
+        )
+
+    resultado = svc.carga_masiva_secciones(registros)
+    return {
+        "mensaje":    f"{resultado['insertados']} secciones insertadas correctamente",
+        "insertados": resultado["insertados"],
+        "errores":    resultado["errores"]
+    }

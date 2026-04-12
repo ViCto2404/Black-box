@@ -1,10 +1,19 @@
-from fastapi import APIRouter, HTTPException, Query, UploadFile, File
+from fastapi import APIRouter, HTTPException, Query, UploadFile, File, Response
 from typing import Annotated
 from app.services import calificaciones as svc
-from app.services.validacion import procesar_archivo
+from app.services.validacion import procesar_archivo_calificaciones
 from app.models.calificacion import CalificacionCreate
 
 router = APIRouter(prefix="/calificaciones", tags=["calificaciones"])
+
+@router.get("/plantilla")
+def descargar_plantilla():
+    contenido = svc.generar_plantilla_excel()
+    return Response(
+        content=contenido,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=plantilla_calificaciones.xlsx"}
+    )
 
 @router.get("/")
 def listar_calificaciones(
@@ -51,7 +60,7 @@ async def carga_masiva(archivo: Annotated[UploadFile, File()]):
             detail="El archivo está vacío"
         )
 
-    registros, errores_validacion = procesar_archivo(contenido, archivo.filename)
+    registros, errores_validacion = procesar_archivo_calificaciones(contenido, archivo.filename)
 
     if errores_validacion:
         raise HTTPException(
