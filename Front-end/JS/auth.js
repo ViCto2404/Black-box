@@ -38,7 +38,7 @@ function verificarSesionActiva() {
     const token = localStorage.getItem("token");
     const currentPath = window.location.pathname;
 
-    if (token && (currentPath.endsWith("login.html") || currentPath === "/" || currentPath.endsWith("/"))) {
+    if (token && (currentPath.endsWith("index.html") || currentPath === "/" || currentPath.endsWith("/"))) {
         const rol = localStorage.getItem("userRole");
         const estado = localStorage.getItem("userStatus");
         const escuela = localStorage.getItem("codigoEscuela");
@@ -134,7 +134,7 @@ if (registerForm) {
                 throw new Error(data.detail || "Error al registrar administrador");
             }
             alert("Administrador creado con éxito. ¡Ya puede iniciar sesión!");
-            window.location.href = "login.html";
+            window.location.href = "index.html";
         })
         .catch(err => alert("Error de registro: " + err.message));
     });
@@ -170,7 +170,7 @@ if (changePasswordForm) {
                 throw new Error(data.detail || "Error al actualizar la contraseña");
             }
             alert("Contraseña actualizada correctamente. ¡Ya puedes iniciar sesión con tu nueva contraseña!");
-            window.location.href = "login.html";
+            window.location.href = "index.html";
         })
         .catch(err => {
             alert("Error: " + err.message);
@@ -197,13 +197,13 @@ function cerrarSesion() {
             // Limpiamos el localStorage pase lo que pase en el servidor
             localStorage.clear();
             alert("Sesión cerrada correctamente.");
-            window.location.href = "login.html";
+            window.location.href = "index.html";
         }
     })
     .catch(err => {
         console.error("Error al cerrar sesión:", err);
         // Fallback: Si el servidor falla, cerramos localmente de todos modos
         localStorage.clear();
-        window.location.href = "login.html";
+        window.location.href = "index.html";
     });
 }
