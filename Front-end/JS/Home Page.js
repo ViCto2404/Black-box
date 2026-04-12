@@ -55,9 +55,10 @@ async function actualizarDashboard() {
         .catch(err => console.error("Error en resumen:", err));
 
     // 2. Gráfico de Masa Estudiantil
-    // Para masa estudiantil, si es director, quizas queramos filtrar por las carreras de su escuela
-    // Por ahora lo dejamos general o si el API soporta carrera, podriamos filtrar.
-    fetch(`${API_URL}/dashboard/masa-estudiantil`)
+    const urlMasa = `${API_URL}/dashboard/masa-estudiantil${params}`;
+    console.log("Consultando API Masa:", urlMasa);
+    
+    fetch(urlMasa)
         .then(res => res.json())
         .then(data => {
             const labels = data.map(i => i.nombre_carrera || i.codigo_carrera);

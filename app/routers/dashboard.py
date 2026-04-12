@@ -26,9 +26,10 @@ def materias_criticas(
 
 @router.get("/masa-estudiantil")
 def masa_estudiantil(
-    carrera: str = Query(default=None)
+    carrera: str = Query(default=None),
+    escuela: str = Query(default=None)
 ):
-    return analisis.get_masa_estudiantil(carrera)
+    return analisis.get_masa_estudiantil(carrera, escuela)
 
 @router.get("/debug/{periodo}")
 def debug(periodo: str):

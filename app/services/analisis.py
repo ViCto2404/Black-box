@@ -131,16 +131,28 @@ def get_resumen_periodo(periodo: str, escuela: str = None):
         "indice_aprobacion": indice_aprobacion
     }
 
-def get_masa_estudiantil(codigo_carrera: str = None):
-    query = supabase.table("estudiantes").select("id_unphu, estado_activo, codigo_carrera, carreras(nombre)")
+def get_masa_estudiantil(codigo_carrera: str = None, escuela: str = None):
+    # Traemos los datos de estudiantes con el join a carreras para el filtro de escuela
+    query = supabase.table("estudiantes").select("id_unphu, estado_activo, codigo_carrera, carreras!inner(nombre, codigo_escuela)")
+    
     if codigo_carrera:
         query = query.eq("codigo_carrera", codigo_carrera)
+    
+    if escuela:
+        # Filtrar por el código de escuela de la carrera
+        query = query.eq("carreras.codigo_escuela", escuela)
 
-    data = _ejecutar_query(query)
+    try:
+        data = _ejecutar_query(query)
+    except Exception as e:
+        print(f"ERROR en get_masa_estudiantil: {str(e)}")
+        return []
+
     if not data:
         return []
     
     df = pd.DataFrame(data)
+    # Extraer el nombre de la carrera del objeto de relación
     df["nombre_carrera"] = df["carreras"].apply(lambda x: x["nombre"] if isinstance(x, dict) else None)
 
     resumen = df.groupby(["codigo_carrera", "nombre_carrera"]).agg(
