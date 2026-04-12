@@ -1,20 +1,67 @@
 /**
  * auth.js - Sincronizado con el Router de Autenticación [/auth]
  */
+/**
+ * LÓGICA DE REDIRECCIÓN CENTRALIZADA
+ * Se usa tanto al hacer login como al verificar una sesión existente.
+ */
+function redireccionarSegunRol(rol, estado, escuela) {
+    rol = (rol || "").toLowerCase().trim();
+    estado = (estado || "activo").toLowerCase().trim();
+
+    if (estado === "inactivo") {
+        window.location.href = "acceso_restringido.html";
+    } 
+    else if (rol === "estudiante") {
+        window.location.href = "formulario_feedback.html";
+    } 
+    else if (rol === "profesor") {
+        window.location.href = "acceso_restringido.html";
+    }
+    else if (rol === "director") {
+        if (!escuela || escuela === "null" || escuela === "undefined") {
+            window.location.href = "acceso_restringido.html";
+        } else {
+            window.location.href = "Home.html";
+        }
+    }
+    else {
+        window.location.href = "Home.html";
+    }
+}
+
+/**
+ * VERIFICAR SESIÓN ACTIVA
+ * Si el usuario ya está logueado y trata de entrar al login, lo mandamos a su sitio.
+ */
+function verificarSesionActiva() {
+    const token = localStorage.getItem("token");
+    const currentPath = window.location.pathname;
+
+    if (token && (currentPath.endsWith("login.html") || currentPath === "/" || currentPath.endsWith("/"))) {
+        const rol = localStorage.getItem("userRole");
+        const estado = localStorage.getItem("userStatus");
+        const escuela = localStorage.getItem("codigoEscuela");
+        
+        console.log("Sesión detectada, redirigiendo...");
+        redireccionarSegunRol(rol, estado, escuela);
+    }
+}
+
+// Ejecutar verificación de inmediato
+verificarSesionActiva();
+
 const loginForm = document.getElementById("loginForm");
 
 if (loginForm) {
     loginForm.addEventListener("submit", function(e) {
         e.preventDefault();
         
-        // REGLA: Aunque el ID en tu HTML sea "usuario", 
-        // tu API espera el campo "email"
         const payload = {
             email: document.getElementById("email").value, 
             password: document.getElementById("password").value
         };
 
-        // REGLA: El router tiene el prefijo "/auth"
         fetch(`${API_URL}/auth/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -30,62 +77,29 @@ if (loginForm) {
         .then(data => {
             console.log("DEBUG: Respuesta JSON del servidor:", JSON.stringify(data, null, 2));
             
-            // Limpiar datos previos para evitar basura de sesiones anteriores
             localStorage.clear();
 
-            // Guardamos los datos según tu LoginResponse
             localStorage.setItem("token", data.access_token);
             localStorage.setItem("userRole", data.rol);
             localStorage.setItem("userName", data.nombre);
             localStorage.setItem("id_unphu", data.id_unphu);
             
-            console.log("DEBUG: Valor de codigo_escuela recibido:", data.codigo_escuela);
-            
             if (data.codigo_escuela) {
                 localStorage.setItem("codigoEscuela", data.codigo_escuela);
-                console.log("DEBUG: codigoEscuela guardado exitosamente en localStorage:", localStorage.getItem("codigoEscuela"));
             }
 
             if (data.codigo_carrera) {
                 localStorage.setItem("codigoCarrera", data.codigo_carrera);
-                console.log("DEBUG: codigoCarrera guardado exitosamente en localStorage:", localStorage.getItem("codigoCarrera"));
             }
 
             if (data.estado) {
                 localStorage.setItem("userStatus", data.estado);
             }
 
-            const rol = data.rol.toLowerCase().trim();
-            const estado = (data.estado || "activo").toLowerCase().trim();
-            const escuela = data.codigo_escuela;
-
-            console.log("DEBUG REDIRECT: Rol:", rol);
-            console.log("DEBUG REDIRECT: Estado:", estado);
-            console.log("DEBUG REDIRECT: Escuela:", escuela);
-
             alert(`Bienvenido, ${data.nombre}`);
 
-            // LÓGICA DE REDIRECCIÓN CENTRALIZADA
-            if (estado === "inactivo") {
-                console.log("REDIRECCIONANDO A: acceso_restringido.html (USUARIO INACTIVO)");
-                window.location.href = "acceso_restringido.html";
-            } 
-            else if (rol === "estudiante") {
-                window.location.href = "formulario_feedback.html";
-            } 
-            else if (rol === "profesor") {
-                window.location.href = "acceso_restringido.html";
-            }
-            else if (rol === "director") {
-                if (!escuela || escuela === "null") {
-                    window.location.href = "acceso_restringido.html";
-                } else {
-                    window.location.href = "Home.html";
-                }
-            }
-            else {
-                window.location.href = "Home.html";
-            }
+            // Aplicar la redirección usando la nueva función
+            redireccionarSegunRol(data.rol, data.estado, data.codigo_escuela);
         })
         .catch(err => {
             alert("Error de acceso: " + err.message);
@@ -101,28 +115,28 @@ if (registerForm) {
         e.preventDefault();
         
         const payload = {
+            id_unphu: document.getElementById("id_unphu").value,
             nombre: document.getElementById("nombre").value,
             email: document.getElementById("email").value,
-            password: document.getElementById("password").value,
-            rol: document.getElementById("rol").value
+            password: document.getElementById("password").value
         };
 
-        // Nota: Verifica si tu router de registro también usa el prefijo /auth
-        // Si no lo usa, quita el '/auth' de la URL
-        fetch(`${API_URL}/auth/register`, { 
+        console.log("Enviando registro de administrador:", payload);
+
+        fetch(`${API_URL}/auth/crear-administrador`, { 
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
         })
         .then(async res => {
+            const data = await res.json();
             if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.detail || "Error al registrar usuario");
+                throw new Error(data.detail || "Error al registrar administrador");
             }
-            alert("Registro exitoso. ¡Ya puedes iniciar sesión!");
+            alert("Administrador creado con éxito. ¡Ya puede iniciar sesión!");
             window.location.href = "login.html";
         })
-        .catch(err => alert(err.message));
+        .catch(err => alert("Error de registro: " + err.message));
     });
 }
 

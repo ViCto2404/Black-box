@@ -52,11 +52,27 @@ function aplicarPermisosDeMenu() {
             }
         });
     } 
-    else if (rol.toLowerCase() === "admin") {
+    else if (rol === "admin" || rol === "administrador") {
         const links = sidebarMenu.querySelectorAll("a");
         links.forEach(a => {
             if (a.getAttribute("href") === "formulario_feedback.html") {
                 a.style.display = "none";
+            }
+        });
+        
+        // Asegurar que el apartado de Usuarios sea visible para Admin
+        dropdownBtns.forEach(btn => {
+            if (btn.innerText.includes("Usuarios")) {
+                btn.style.display = "block";
+            }
+        });
+    }
+    else {
+        // Para cualquier otro rol (ej. director), ocultamos el apartado de Usuarios si existiera
+        dropdownBtns.forEach(btn => {
+            if (btn.innerText.includes("Usuarios")) {
+                btn.style.display = "none";
+                if (btn.nextElementSibling) btn.nextElementSibling.style.display = "none";
             }
         });
     }
