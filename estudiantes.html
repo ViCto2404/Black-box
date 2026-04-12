@@ -1,13 +1,11 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Directores - UNPHU</title>
-    <link rel="stylesheet" href="../CSS/directores.css">
-    <link rel="stylesheet" href="../CSS/navbar.css">
-    <link rel="stylesheet" href="../CSS/Styles.css">
-    <link rel="stylesheet" href="../CSS/global.css">
+    <title>Gestión de Estudiantes</title>
+    <link rel="stylesheet" href="CSS/global.css">
+    <link rel="stylesheet" href="CSS/materias.css"> <!-- Reutilizamos estilos de tabla/modal -->
 </head>
 <body>
 
@@ -23,25 +21,30 @@
 </div>
 
 <div id="sidebar" class="sidebar">
-    <p class="logo">UNPHU</p>
+    <p class="sidebar-logo">UNPHU</p>
     <div class="sidebar-menu">
         <button class="dropdown-btn">🎓 Gestión Académica ▼</button>
-        <div class="dropdown-container" style="display: block;"> <a href="Escuela.html">Escuelas</a>
+        <div class="dropdown-container">
+            <a href="Escuela.html">Escuelas</a>
             <a href="Carrera.html">Carreras</a>
+            <a href="estudiantes.html">Estudiantes</a>
             <a href="Materias.html">Materias</a>
             <a href="Seccion.html">Secciones</a>
             <a href="Profesor.html">Profesores</a>
-            <a href="Director.html">Directores</a>
         </div>
+
         <button class="dropdown-btn">👨‍🎓 Estudiantes ▼</button>
         <div class="dropdown-container">
+            <a href="formulario_feedback.html">Formulario de feedback</a>
         </div>
+
         <button class="dropdown-btn">📊 Datos ▼</button>
         <div class="dropdown-container">
             <a href="importacion_calificaciones.html">Importación de Calificaciones</a>
             <a href="importacion_estudiantes.html">Importación de Estudiantes</a>
             <a href="importacion_secciones.html">Importación de Secciones</a>
         </div>
+
         <button class="dropdown-btn">⚙ Cuenta ▼</button>
         <div class="dropdown-container">
             <a href="index.html">Acceso</a>
@@ -54,55 +57,76 @@
     <div class="header-tabla">
         <div class="titulo-seccion">
             <h2>Gestión de</h2>
-            <h1>Directores</h1>
+            <h1>Estudiantes</h1>
         </div>
-        <button class="btn-unphu-largo" onclick="abrirModal()">+ NUEVO DIRECTOR</button>
+        <button class="btn-unphu-largo" onclick="abrirModal()">+ NUEVO ESTUDIANTE</button>
     </div>
 
     <div class="card-tabla">
         <div class="card-header">
-            <h3>Lista de Directores</h3>
+            <h3>Listado de Estudiantes</h3>
         </div>
-        <table id="tablaDirectores">
-            <thead>
-                <tr>
-                    <th>ID Director</th>
-                    <th>Nombre</th>
-                    <th>Correo</th>
-                    <th>Escuela Asignada</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+
+        <div class="table-scroll">
+            <table id="tablaEstudiantes">
+                <thead>
+                    <tr>
+                        <th>ID UNPHU</th>
+                        <th>Nombre</th>
+                        <th>Carrera</th>
+                        <th>Correo</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </div>
 </div>
 
-<div id="modalDirector" class="modal">
+<div id="modalEstudiante" class="modal">
     <div class="modal-content">
-        <div class="form-container admin"> <span class="cerrar" onclick="cerrarModal()">&times;</span>
+        <div class="form-container admin">
+            <span class="cerrar" onclick="cerrarModal()">&times;</span>
             <div class="form-header">
-                <h2 id="modalTitle">Nuevo Director</h2>
+                <h2 id="modalTitle">Nuevo Estudiante</h2>
+                <p>Registro de Información Académica</p>
             </div>
-            <form id="crearDirectorForm">
+
+            <form id="crearEstudianteForm">
+                <p class="form-note"><span class="required">*</span> Campos obligatorios</p>
+                
                 <div class="form-group">
-                    <label>ID Director (Matrícula)</label>
-                    <input type="text" id="id_unphu" required placeholder="Ej: DIR-21-001">
+                    <label for="id_unphu">ID UNPHU <span class="required">*</span></label>
+                    <input type="text" id="id_unphu" name="id_unphu" maxlength="15" required placeholder="Ej: 20-0001">
                 </div>
+
                 <div class="form-group">
-                    <label>Nombre Completo</label>
-                    <input type="text" id="nombre" required>
+                    <label for="nombre">Nombre Completo <span class="required">*</span></label>
+                    <input type="text" id="nombre" name="nombre" maxlength="100" required>
                 </div>
+
                 <div class="form-group">
-                    <label>Correo Institucional</label>
-                    <input type="email" id="correo_institucional" required>
+                    <label for="carrera">Carrera <span class="required">*</span></label>
+                    <select id="carrera" name="carrera" required>
+                        <option value="">Seleccione una carrera</option>
+                    </select>
                 </div>
+
                 <div class="form-group">
-                    <label>Escuela (Opcional)</label>
-                    <select id="codigo_escuela">
-                        <option value="">Por asignar / Ninguna</option>
-                        </select>
+                    <label for="correo">Correo Institucional <span class="required">*</span></label>
+                    <input type="email" id="correo" name="correo" maxlength="100" required>
                 </div>
+
+                <div class="form-group">
+                    <label for="estado">Estado</label>
+                    <select id="estado" name="estado">
+                        <option value="Activo">Activo</option>
+                        <option value="Inactivo">Inactivo</option>
+                    </select>
+                </div>
+
                 <div class="form-actions">
                     <button type="submit" class="btn-unphu">Guardar</button>
                     <button type="button" class="btn-secondary" onclick="cerrarModal()">Cancelar</button>
@@ -125,7 +149,9 @@
     </div>
 </footer>
 
-<script src="../JS/directores.js"></script>
-<script src="../JS/navbar.js"></script>
+<script src="JS/config.js"></script>
+<script src="JS/estudiantes.js"></script>
+<script src="JS/auth.js"></script>
+<script src="JS/navbar.js"></script>
 </body>
 </html>

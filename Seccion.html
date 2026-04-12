@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Estudiantes</title>
-    <link rel="stylesheet" href="../CSS/global.css">
-    <link rel="stylesheet" href="../CSS/materias.css"> <!-- Reutilizamos estilos de tabla/modal -->
+    <title>Gestión de Secciones</title>
+    <link rel="stylesheet" href="CSS/global.css">
+    <link rel="stylesheet" href="CSS/secciones.css">
 </head>
 <body>
 
@@ -57,24 +57,23 @@
     <div class="header-tabla">
         <div class="titulo-seccion">
             <h2>Gestión de</h2>
-            <h1>Estudiantes</h1>
+            <h1>Secciones</h1>
         </div>
-        <button class="btn-unphu-largo" onclick="abrirModal()">+ NUEVO ESTUDIANTE</button>
+        <button class="btn-unphu-largo" onclick="abrirModal()">+ NUEVA SECCIÓN</button>
     </div>
 
     <div class="card-tabla">
         <div class="card-header">
-            <h3>Listado de Estudiantes</h3>
+            <h3>Lista de Secciones</h3>
         </div>
-
         <div class="table-scroll">
-            <table id="tablaEstudiantes">
+            <table id="tablaSecciones">
                 <thead>
                     <tr>
-                        <th>ID UNPHU</th>
-                        <th>Nombre</th>
-                        <th>Carrera</th>
-                        <th>Correo</th>
+                        <th>Código</th>
+                        <th>Materia</th>
+                        <th>Profesor</th>
+                        <th>Aula</th>
                         <th>Estado</th>
                         <th>Acciones</th>
                     </tr>
@@ -85,46 +84,61 @@
     </div>
 </div>
 
-<div id="modalEstudiante" class="modal">
+<div id="modalSeccion" class="modal">
     <div class="modal-content">
         <div class="form-container admin">
             <span class="cerrar" onclick="cerrarModal()">&times;</span>
             <div class="form-header">
-                <h2 id="modalTitle">Nuevo Estudiante</h2>
-                <p>Registro de Información Académica</p>
+                <h2 id="modalTitle">Nueva Sección</h2>
             </div>
 
-            <form id="crearEstudianteForm">
+            <form id="crearSeccionForm">
                 <p class="form-note"><span class="required">*</span> Campos obligatorios</p>
-                
+
                 <div class="form-group">
-                    <label for="id_unphu">ID UNPHU <span class="required">*</span></label>
-                    <input type="text" id="id_unphu" name="id_unphu" maxlength="15" required placeholder="Ej: 20-0001">
+                    <label>Código Sección <span class="required">*</span></label>
+                    <input type="text" id="codigoSeccion" required placeholder="Ej: INF101-01">
                 </div>
 
                 <div class="form-group">
-                    <label for="nombre">Nombre Completo <span class="required">*</span></label>
-                    <input type="text" id="nombre" name="nombre" maxlength="100" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="carrera">Carrera <span class="required">*</span></label>
-                    <select id="carrera" name="carrera" required>
-                        <option value="">Seleccione una carrera</option>
+                    <label>Materia <span class="required">*</span></label>
+                    <select id="materiaSeccion" required>
+                        <option value="">Seleccione Materia</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label for="correo">Correo Institucional <span class="required">*</span></label>
-                    <input type="email" id="correo" name="correo" maxlength="100" required>
+                    <label>Profesor</label>
+                    <select id="profesorSeccion">
+                        <option value="">Seleccione Profesor (Opcional)</option>
+                    </select>
                 </div>
 
                 <div class="form-group">
-                    <label for="estado">Estado</label>
-                    <select id="estado" name="estado">
-                        <option value="Activo">Activo</option>
-                        <option value="Inactivo">Inactivo</option>
+                    <label>Aula</label>
+                    <input type="text" id="aula" placeholder="Opcional">
+                </div>
+
+                <div class="form-group">
+                    <label>Cupo Máximo <span class="required">*</span></label>
+                    <input type="number" id="cupoSeccion" min="1" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Estado</label>
+                    <select id="estadoSeccion">
+                        <option value="Activa">Activa</option>
+                        <option value="Cerrada">Cerrada</option>
                     </select>
+                </div>
+
+                <div class="form-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <label style="margin: 0;">Horarios (Máx 3 - Opcional)</label>
+                        <button type="button" class="btn-editar" onclick="agregarHorario()" style="width: auto; padding: 5px 15px;">+ Agregar</button>
+                    </div>
+                    <div id="contenedorHorarios">
+                        </div>
                 </div>
 
                 <div class="form-actions">
@@ -149,9 +163,9 @@
     </div>
 </footer>
 
-<script src="../JS/config.js"></script>
-<script src="../JS/estudiantes.js"></script>
-<script src="../JS/auth.js"></script>
-<script src="../JS/navbar.js"></script>
+<script src="JS/config.js"></script>
+<script src="JS/secciones.js"></script>
+<script src="JS/auth.js"></script>
+<script src="JS/navbar.js"></script>
 </body>
 </html>

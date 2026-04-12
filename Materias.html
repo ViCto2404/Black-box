@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Carreras</title>
-    <link rel="stylesheet" href="../CSS/global.css">
-    <link rel="stylesheet" href="../CSS/carreras.css">
+    <title>Materias</title>
+    <link rel="stylesheet" href="CSS/global.css">
+    <link rel="stylesheet" href="CSS/materias.css">
 </head>
 <body>
 
@@ -20,7 +20,6 @@
     </div>
 </div>
 
-<!-- SIDEBAR -->
 <div id="sidebar" class="sidebar">
     <p class="sidebar-logo">UNPHU</p>
     <div class="sidebar-menu">
@@ -58,22 +57,24 @@
     <div class="header-tabla">
         <div class="titulo-seccion">
             <h2>Gestión de</h2>
-            <h1>Carreras</h1>
+            <h1>Materias</h1>
         </div>
-        <button class="btn-unphu-largo" onclick="abrirModal()">+ NUEVA CARRERA</button>
+        <button class="btn-unphu-largo" onclick="abrirModal()">+ NUEVA MATERIA</button>
     </div>
 
     <div class="card-tabla">
         <div class="card-header">
-            <h3>Lista de Carreras</h3>
+            <h3>Listado de Materias</h3>
         </div>
-        <table id="tablaCarreras">
+
+        <table id="tablaMaterias">
             <thead>
                 <tr>
                     <th>Código</th>
                     <th>Nombre</th>
-                    <th>Escuela</th>
-                    <th>Duración</th>
+                    <th>Carrera</th>
+                    <th>Créditos</th>
+                    <th>Cupo</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                 </tr>
@@ -83,43 +84,55 @@
     </div>
 </div>
 
-
-<div id="modalCarrera" class="modal">
+<div id="modalMateria" class="modal">
     <div class="modal-content">
-        <div class="form-container admin"> <span class="cerrar" onclick="cerrarModal()">&times;</span>
-
+        <div class="form-container admin">
+            <span class="cerrar" onclick="cerrarModal()">&times;</span>
             <div class="form-header">
-                <h2 id="modalTitle">Nueva Carrera</h2>
+                <h2 id="modalTitle">Nueva Materia</h2>
+                <p>Registro de Información Académica</p>
             </div>
 
-            <form id="crearCarreraForm">
+            <form id="crearMateriaForm">
                 <p class="form-note"><span class="required">*</span> Campos obligatorios</p>
-
+                
                 <div class="form-group">
-                    <label>Código <span class="required">*</span></label>
-                    <input type="text" id="codigoCarrera" maxlength="10" required placeholder="Ej: ISC">
+                    <label for="codigo">Código de la Materia <span class="required">*</span></label>
+                    <input type="text" id="codigo" name="codigo" maxlength="10" required placeholder="Ej: INF-101">
                 </div>
 
                 <div class="form-group">
-                    <label>Nombre de la Carrera <span class="required">*</span></label>
-                    <input type="text" id="nombreCarrera" maxlength="100" required>
+                    <label for="nombre">Nombre de la Materia <span class="required">*</span></label>
+                    <input type="text" id="nombre" name="nombre" maxlength="100" required>
                 </div>
 
                 <div class="form-group">
-                    <label>Escuela <span class="required">*</span></label>
-                    <select id="escuelaCarrera" required>
-                        <option value="">Seleccione Escuela</option>
+                    <label for="carrera">Carrera <span class="required">*</span></label>
+                    <select id="carrera" name="carrera" required>
+                        <option value="">Seleccione una carrera</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label>Duración (años) <span class="required">*</span></label>
-                    <input type="number" id="duracion" min="1" max="7" required>
+                    <label for="creditos">Créditos <span class="required">*</span></label>
+                    <input type="number" id="creditos" name="creditos" min="1" max="6" required>
                 </div>
 
                 <div class="form-group">
-                    <label>Estado</label>
-                    <select id="estadoCarrera">
+                    <label for="profesor">Profesor Asignado</label>
+                    <select id="profesor" name="profesor">
+                        <option value="">Seleccione un profesor (Opcional)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="cupo">Cupo Máximo <span class="required">*</span></label>
+                    <input type="number" id="cupo" name="cupo" min="1" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="estado">Estado</label>
+                    <select id="estado" name="estado">
                         <option value="Activa">Activa</option>
                         <option value="Inactiva">Inactiva</option>
                     </select>
@@ -147,9 +160,9 @@
     </div>
 </footer>
 
-<script src="../JS/config.js"></script>
-<script src="../JS/carreras.js"></script>
-<script src="../JS/auth.js"></script>
-<script src="../JS/navbar.js"></script>
+<script src="JS/config.js"></script>
+<script src="JS/materias.js"></script>
+<script src="JS/auth.js"></script>
+<script src="JS/navbar.js"></script>
 </body>
 </html>

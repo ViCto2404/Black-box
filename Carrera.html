@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Secciones</title>
-    <link rel="stylesheet" href="../CSS/global.css">
-    <link rel="stylesheet" href="../CSS/secciones.css">
+    <title>Gestión de Carreras</title>
+    <link rel="stylesheet" href="CSS/global.css">
+    <link rel="stylesheet" href="CSS/carreras.css">
 </head>
 <body>
 
@@ -20,6 +20,7 @@
     </div>
 </div>
 
+<!-- SIDEBAR -->
 <div id="sidebar" class="sidebar">
     <p class="sidebar-logo">UNPHU</p>
     <div class="sidebar-menu">
@@ -57,88 +58,71 @@
     <div class="header-tabla">
         <div class="titulo-seccion">
             <h2>Gestión de</h2>
-            <h1>Secciones</h1>
+            <h1>Carreras</h1>
         </div>
-        <button class="btn-unphu-largo" onclick="abrirModal()">+ NUEVA SECCIÓN</button>
+        <button class="btn-unphu-largo" onclick="abrirModal()">+ NUEVA CARRERA</button>
     </div>
 
     <div class="card-tabla">
         <div class="card-header">
-            <h3>Lista de Secciones</h3>
+            <h3>Lista de Carreras</h3>
         </div>
-        <div class="table-scroll">
-            <table id="tablaSecciones">
-                <thead>
-                    <tr>
-                        <th>Código</th>
-                        <th>Materia</th>
-                        <th>Profesor</th>
-                        <th>Aula</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
+        <table id="tablaCarreras">
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Nombre</th>
+                    <th>Escuela</th>
+                    <th>Duración</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
     </div>
 </div>
 
-<div id="modalSeccion" class="modal">
+
+<div id="modalCarrera" class="modal">
     <div class="modal-content">
-        <div class="form-container admin">
-            <span class="cerrar" onclick="cerrarModal()">&times;</span>
+        <div class="form-container admin"> <span class="cerrar" onclick="cerrarModal()">&times;</span>
+
             <div class="form-header">
-                <h2 id="modalTitle">Nueva Sección</h2>
+                <h2 id="modalTitle">Nueva Carrera</h2>
             </div>
 
-            <form id="crearSeccionForm">
+            <form id="crearCarreraForm">
                 <p class="form-note"><span class="required">*</span> Campos obligatorios</p>
 
                 <div class="form-group">
-                    <label>Código Sección <span class="required">*</span></label>
-                    <input type="text" id="codigoSeccion" required placeholder="Ej: INF101-01">
+                    <label>Código <span class="required">*</span></label>
+                    <input type="text" id="codigoCarrera" maxlength="10" required placeholder="Ej: ISC">
                 </div>
 
                 <div class="form-group">
-                    <label>Materia <span class="required">*</span></label>
-                    <select id="materiaSeccion" required>
-                        <option value="">Seleccione Materia</option>
+                    <label>Nombre de la Carrera <span class="required">*</span></label>
+                    <input type="text" id="nombreCarrera" maxlength="100" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Escuela <span class="required">*</span></label>
+                    <select id="escuelaCarrera" required>
+                        <option value="">Seleccione Escuela</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label>Profesor</label>
-                    <select id="profesorSeccion">
-                        <option value="">Seleccione Profesor (Opcional)</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Aula</label>
-                    <input type="text" id="aula" placeholder="Opcional">
-                </div>
-
-                <div class="form-group">
-                    <label>Cupo Máximo <span class="required">*</span></label>
-                    <input type="number" id="cupoSeccion" min="1" required>
+                    <label>Duración (años) <span class="required">*</span></label>
+                    <input type="number" id="duracion" min="1" max="7" required>
                 </div>
 
                 <div class="form-group">
                     <label>Estado</label>
-                    <select id="estadoSeccion">
+                    <select id="estadoCarrera">
                         <option value="Activa">Activa</option>
-                        <option value="Cerrada">Cerrada</option>
+                        <option value="Inactiva">Inactiva</option>
                     </select>
-                </div>
-
-                <div class="form-group">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <label style="margin: 0;">Horarios (Máx 3 - Opcional)</label>
-                        <button type="button" class="btn-editar" onclick="agregarHorario()" style="width: auto; padding: 5px 15px;">+ Agregar</button>
-                    </div>
-                    <div id="contenedorHorarios">
-                        </div>
                 </div>
 
                 <div class="form-actions">
@@ -163,9 +147,9 @@
     </div>
 </footer>
 
-<script src="../JS/config.js"></script>
-<script src="../JS/secciones.js"></script>
-<script src="../JS/auth.js"></script>
-<script src="../JS/navbar.js"></script>
+<script src="JS/config.js"></script>
+<script src="JS/carreras.js"></script>
+<script src="JS/auth.js"></script>
+<script src="JS/navbar.js"></script>
 </body>
 </html>
