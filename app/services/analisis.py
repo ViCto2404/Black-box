@@ -132,18 +132,35 @@ def get_resumen_periodo(periodo: str, escuela: str = None):
     }
 
 def get_masa_estudiantil(codigo_carrera: str = None, escuela: str = None):
-    # Traemos los datos de estudiantes con el join a carreras para el filtro de escuela
-    query = supabase.table("estudiantes").select("id_unphu, estado_activo, codigo_carrera, carreras!inner(nombre, codigo_escuela)")
+    # ESTRATEGIA: Si hay escuela, primero buscamos qué carreras pertenecen a esa escuela
+    codigos_carreras_permitidos = []
+    
+    if escuela:
+        try:
+            res_carreras = supabase.table("carreras").select("codigo").eq("codigo_escuela", escuela).execute()
+            if res_carreras.data:
+                codigos_carreras_permitidos = [c["codigo"] for c in res_carreras.data]
+                print(f"DEBUG MASA: Carreras permitidas para escuela {escuela}: {codigos_carreras_permitidos}")
+            else:
+                print(f"DEBUG MASA: No se encontraron carreras para la escuela {escuela}")
+                return []
+        except Exception as e:
+            print(f"ERROR obteniendo carreras para escuela: {str(e)}")
+            return []
+
+    # Ahora consultamos los estudiantes
+    query = supabase.table("estudiantes").select("id_unphu, estado_activo, codigo_carrera, carreras(nombre)")
     
     if codigo_carrera:
         query = query.eq("codigo_carrera", codigo_carrera)
     
-    if escuela:
-        # Filtrar por el código de escuela de la carrera
-        query = query.eq("carreras.codigo_escuela", escuela)
+    # Filtro manual por la lista de carreras de la escuela
+    if escuela and codigos_carreras_permitidos:
+        query = query.in_("codigo_carrera", codigos_carreras_permitidos)
 
     try:
         data = _ejecutar_query(query)
+        print(f"DEBUG MASA: Estudiantes encontrados tras filtro: {len(data) if data else 0}")
     except Exception as e:
         print(f"ERROR en get_masa_estudiantil: {str(e)}")
         return []
@@ -152,9 +169,9 @@ def get_masa_estudiantil(codigo_carrera: str = None, escuela: str = None):
         return []
     
     df = pd.DataFrame(data)
-    # Extraer el nombre de la carrera del objeto de relación
-    df["nombre_carrera"] = df["carreras"].apply(lambda x: x["nombre"] if isinstance(x, dict) else None)
+    df["nombre_carrera"] = df["carreras"].apply(lambda x: x["nombre"] if isinstance(x, dict) else "N/A")
 
+    # Agrupar y resumir
     resumen = df.groupby(["codigo_carrera", "nombre_carrera"]).agg(
         total_activos = ("estado_activo", lambda x: int((x=="Activo").sum())),
         total_inactivos=("estado_activo", lambda x: int((x == "Inactivo").sum())),

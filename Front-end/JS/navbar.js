@@ -20,16 +20,24 @@ document.addEventListener("click", function(event) {
 
 // --- LÓGICA DE PERMISOS POR ROL ---
 function aplicarPermisosDeMenu() {
-    const rol = localStorage.getItem("userRole");
+    const rolRaw = localStorage.getItem("userRole") || "";
+    const rol = rolRaw.toLowerCase().trim();
     if (!rol) return;
 
     const sidebarMenu = document.querySelector(".sidebar-menu");
+    const menuBtn = document.querySelector(".menu-btn");
+
+    // REGLA: Si es director, ocultar el botón del menú hamburguesa por completo
+    if (rol === "director" && menuBtn) {
+        menuBtn.style.display = "none";
+    }
+
     if (!sidebarMenu) return;
 
     const dropdownBtns = sidebarMenu.querySelectorAll(".dropdown-btn");
     const containers = sidebarMenu.querySelectorAll(".dropdown-container");
 
-    if (rol.toLowerCase() === "estudiante") {
+    if (rol === "estudiante") {
         dropdownBtns.forEach(btn => {
             if (!btn.innerText.includes("Estudiantes")) {
                 btn.style.display = "none";

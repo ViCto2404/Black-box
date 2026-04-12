@@ -11,6 +11,7 @@ class LoginResponse(BaseModel):
     id_unphu: str
     nombre: str
     codigo_escuela: str | None = None
+    codigo_carrera: str | None = None
 
 class AdminCreate(BaseModel):
     id_unphu: str

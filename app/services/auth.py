@@ -34,12 +34,14 @@ def login(email: str, password: str):
 
         nombre = "Usuario"
         codigo_escuela = None
+        codigo_carrera = None
 
         # 2. Obtener datos específicos según el rol (siempre usando el cliente global)
         if rol_raw == "estudiante":
-            res = supabase.table("estudiantes").select("nombre").eq("id_unphu", id_unphu_raw).execute()
+            res = supabase.table("estudiantes").select("nombre, codigo_carrera").eq("id_unphu", id_unphu_raw).execute()
             if res.data:
                 nombre = res.data[0].get("nombre", "Estudiante")
+                codigo_carrera = res.data[0].get("codigo_carrera")
         
         elif rol_raw == "director":
             # Buscamos en 'directores' usando el email (más seguro)
@@ -63,7 +65,8 @@ def login(email: str, password: str):
             "rol":          rol_raw,
             "id_unphu":     id_unphu_raw,
             "nombre":       nombre,
-            "codigo_escuela": codigo_escuela
+            "codigo_escuela": codigo_escuela,
+            "codigo_carrera": codigo_carrera
         }, None
 
     except Exception as e:

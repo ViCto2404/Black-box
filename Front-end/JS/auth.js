@@ -44,8 +44,11 @@ if (loginForm) {
             if (data.codigo_escuela) {
                 localStorage.setItem("codigoEscuela", data.codigo_escuela);
                 console.log("DEBUG: codigoEscuela guardado exitosamente en localStorage:", localStorage.getItem("codigoEscuela"));
-            } else {
-                console.warn("DEBUG: El campo codigo_escuela es NULL o UNDEFINED en la respuesta.");
+            }
+
+            if (data.codigo_carrera) {
+                localStorage.setItem("codigoCarrera", data.codigo_carrera);
+                console.log("DEBUG: codigoCarrera guardado exitosamente en localStorage:", localStorage.getItem("codigoCarrera"));
             }
 
             alert(`Bienvenido, ${data.nombre}`);
