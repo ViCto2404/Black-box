@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Importación de Secciones</title>
+    <link rel="stylesheet" href="../CSS/Styles.css">
+    <link rel="stylesheet" href="../CSS/global.css">
+    <link rel="stylesheet" href="../CSS/navbar.css">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+<div class="navbar">
+    <div class="left">
+        <button class="menu-btn" onclick="toggleMenu()">☰</button>
+        <a href="Home.html" class="logo">BLACKBOX</a>
+    </div>
+    <div class="right" id="nav-auth-section">
+        <a href="login.html">Login</a>
+        <a href="Register.html" class="btn-register">Register</a>
+    </div>
+</div>
+
+<div id="sidebar" class="sidebar">
+    <p class="sidebar-logo">UNPHU</p>
+    <div class="sidebar-menu">
+        <button class="dropdown-btn">🎓 Gestión Académica ▼</button>
+        <div class="dropdown-container">
+            <a href="Escuela.html">Escuelas</a>
+            <a href="Carrera.html">Carreras</a>
+            <a href="estudiantes.html">Estudiantes</a>
+            <a href="Materias.html">Materias</a>
+            <a href="Seccion.html">Secciones</a>
+            <a href="Profesor.html">Profesores</a>
+        </div>
+
+        <button class="dropdown-btn">👨‍🎓 Estudiantes ▼</button>
+        <div class="dropdown-container">
+            <a href="formulario_feedback.html">Formulario de feedback</a>
+        </div>
+
+        <button class="dropdown-btn">📊 Datos ▼</button>
+        <div class="dropdown-container">
+            <a href="importacion_calificaciones.html">Importación de Calificaciones</a>
+            <a href="importacion_estudiantes.html">Importación de Estudiantes</a>
+            <a href="importacion_secciones.html">Importación de Secciones</a>
+        </div>
+
+        <button class="dropdown-btn">⚙ Cuenta ▼</button>
+        <div class="dropdown-container">
+            <a href="login.html">Login</a>
+            <a href="Register.html">Register</a>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="form-container admin">
+    <div class="form-header">
+        <h2>Gestión de Datos Académicos</h2>
+        <p>Carga Masiva de Secciones (RF4)</p>
+    </div>
+    <div class="import-box">
+        <label for="fileUpload" class="drop-zone">
+            <span>Arrastre aquí su archivo CSV o haga clic</span>
+            <input type="file" id="fileUpload" accept=".csv, .xlsx" hidden>
+        </label>
+        <p class="file-format">Formato requerido: SECC---15---XLSX</p>
+    </div>
+    <div class="form-actions">
+        <button id="btnProcesar" class="btn-unphu">Procesar Secciones</button>
+        <button class="btn-secondary" onclick="descargarPlantilla()">Descargar Plantilla</button>
+    </div>
+    
+    <div class="preview-section" id="previewSection" style="display: none;">
+        <h3>Vista previa del archivo cargado</h3>
+        <div class="preview-table-container">
+            <table class="preview-table">
+                <thead>
+                    <tr>
+                        <th>Código Sección</th>
+                        <th>Materia</th>
+                        <th>Profesor</th>
+                        <th>Periodo</th>
+                        <th>Aula</th>
+                        <th>Cupo Máx</th>
+                        <th>Horario</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="previewBody">
+                    <!-- Aquí se llenará dinámicamente -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<footer class="main-footer">
+    <div class="footer-content">
+        <div class="footer-left">
+            <p><strong>UNPHU</strong> - Universidad Nacional Pedro Henríquez Ureña</p>
+            <p>Av. John F. Kennedy, Km 7 1/2, Santo Domingo, R.D.</p>
+        </div>
+        <div class="footer-right">
+            <p>&copy; 2026 BlackBox Project. Todos los derechos reservados.</p>
+            <a href="https://unphu.edu.do" target="_blank">unphu.edu.do</a>
+        </div>
+    </div>
+</footer>
+
+<script>
+document.getElementById("fileUpload").addEventListener("change", function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    const fileName = file.name.toLowerCase();
+    const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+
+    reader.onload = function(e) {
+        const tbody = document.getElementById("previewBody");
+        tbody.innerHTML = "";
+        
+        if (isExcel) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+            if (jsonData.length > 0) {
+                // Skip header row
+                jsonData.slice(1).forEach(row => {
+                    const tr = document.createElement("tr");
+                    row.forEach(col => {
+                        const td = document.createElement("td");
+                        td.textContent = col;
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                });
+            }
+        } else {
+            const text = e.target.result;
+            const rows = text.split(/\r?\n/).filter(row => row.trim() !== "");
+
+            if (rows.length > 0) {
+                const delimiter = rows[0].includes(";") ? ";" : ",";
+                rows.slice(1).forEach(row => {
+                    const cols = row.split(delimiter);
+                    const tr = document.createElement("tr");
+                    cols.forEach(col => {
+                        const td = document.createElement("td");
+                        td.textContent = col.trim();
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        document.getElementById("previewSection").style.display = "block";
+        document.querySelector('.form-container').classList.add('wide');
+    };
+
+    if (isExcel) {
+        reader.readAsArrayBuffer(file);
+    } else {
+        reader.readAsText(file, "ISO-8859-1");
+    }
+});
+
+function descargarPlantilla() {
+    window.open(`${API_URL}/secciones/plantilla`, '_blank');
+}
+
+document.getElementById("btnProcesar").addEventListener("click", async function() {
+    const fileInput = document.getElementById("fileUpload");
+    const file = fileInput.files[0];
+
+    if (!file) {
+        alert("Por favor, seleccione un archivo primero.");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("archivo", file);
+
+    try {
+        const response = await fetch(`${API_URL}/secciones/carga-masiva`, {
+            method: "POST",
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            let msg = `Carga completada:\n- Insertados: ${result.insertados}\n`;
+            if (result.errores && result.errores.length > 0) {
+                msg += `\nRegistros con errores (${result.errores.length}):\n` + result.errores.join('\n');
+            }
+            alert(msg);
+            location.reload();
+        } else {
+            let errorMessage = "Error en la carga: ";
+            if (result.detail && typeof result.detail === 'object' && Array.isArray(result.detail.errores)) {
+                errorMessage += "\n" + result.detail.errores.join("\n");
+            } else {
+                errorMessage += (typeof result.detail === 'string' ? result.detail : JSON.stringify(result.detail)) || "Ocurrió un error al procesar el archivo";
+            }
+            alert(errorMessage);
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        alert("Error de conexión al servidor.");
+    }
+});
+</script>
+
+<script src="../JS/config.js"></script>
+<script src="../JS/navbar.js"></script>
+<script src="../JS/auth.js"></script>
+</body>
+</html>

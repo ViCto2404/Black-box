@@ -39,7 +39,7 @@ if (loginForm) {
 
             // REDIRECCIÓN SEGÚN ROL
             if (data.rol.toLowerCase() === "estudiante") {
-                window.location.href = "Formularios.html";
+                window.location.href = "formulario_feedback.html";
             } else {
                 window.location.href = "Home.html";
             }

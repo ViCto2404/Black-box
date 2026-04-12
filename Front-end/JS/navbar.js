@@ -37,7 +37,7 @@ function aplicarPermisosDeMenu() {
         });
         
         containers.forEach(cont => {
-            if (cont.innerHTML.includes("Formularios.html")) {
+            if (cont.innerHTML.includes("formulario_feedback.html")) {
                 cont.style.display = "block"; 
             } else {
                 cont.style.display = "none";
@@ -47,7 +47,7 @@ function aplicarPermisosDeMenu() {
     else if (rol.toLowerCase() === "admin") {
         const links = sidebarMenu.querySelectorAll("a");
         links.forEach(a => {
-            if (a.getAttribute("href") === "Formularios.html") {
+            if (a.getAttribute("href") === "formulario_feedback.html") {
                 a.style.display = "none";
             }
         });

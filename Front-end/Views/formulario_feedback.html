@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulario</title>
+    <title>UNPHU - Feedback</title>
+    <link rel="stylesheet" href="../CSS/global.css">
     <link rel="stylesheet" href="../CSS/Styles.css">
+    <link rel="stylesheet" href="../CSS/navbar.css">
 </head>
 <body>
+
 <div class="navbar">
     <div class="left">
         <button class="menu-btn" onclick="toggleMenu()">☰</button>
@@ -18,22 +21,54 @@
     </div>
 </div>
 
-    <div class="form-container feedback">
+<div id="sidebar" class="sidebar">
+    <p class="sidebar-logo">UNPHU</p>
+    <div class="sidebar-menu">
+        <button class="dropdown-btn">🎓 Gestión Académica ▼</button>
+        <div class="dropdown-container">
+            <a href="Escuela.html">Escuelas</a>
+            <a href="Carrera.html">Carreras</a>
+            <a href="estudiantes.html">Estudiantes</a>
+            <a href="Materias.html">Materias</a>
+            <a href="Seccion.html">Secciones</a>
+            <a href="Profesor.html">Profesores</a>
+        </div>
 
+        <button class="dropdown-btn">👨‍🎓 Estudiantes ▼</button>
+        <div class="dropdown-container">
+            <a href="formulario_feedback.html">Formulario de feedback</a>
+        </div>
+
+        <button class="dropdown-btn">📊 Datos ▼</button>
+        <div class="dropdown-container">
+            <a href="importacion_calificaciones.html">Importación de Calificaciones</a>
+            <a href="importacion_estudiantes.html">Importación de Estudiantes</a>
+            <a href="importacion_secciones.html">Importación de Secciones</a>
+        </div>
+
+        <button class="dropdown-btn">⚙ Cuenta ▼</button>
+        <div class="dropdown-container">
+            <a href="login.html">Login</a>
+            <a href="Register.html">Register</a>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="form-container feedback">
         <div class="form-header">
             <h2>UNPHU Academic Insights</h2>
             <p>Buzón de Feedback Estudiantil</p>
         </div>
 
         <form id="feedbackForm">
-
             <div class="form-group">
                 <label for="carrera">Carrera:</label>
                 <select name="carrera" id="carrera" required>
                     <option value="">Seleccione su carrera</option>
                     <option value="ISC">Ingeniería en Sistemas</option>
-                    <option value="ISC">Ingeniería Industrial</option>
-                    <option value="ISC">Ingeniería Civil</option>
+                    <option value="IND">Ingeniería Industrial</option>
+                    <option value="CIV">Ingeniería Civil</option>
                 </select>
             </div>
 
@@ -45,7 +80,6 @@
                 </select>
             </div>
 
-            <!-- Selector múltiple -->
             <div class="form-group">
                 <label for="categoria">Seleccione los aspectos que desea evaluar:</label>
                 <select name="categoria" id="categoria" multiple required>
@@ -57,7 +91,6 @@
                 </select>
                 <small>Puede seleccionar varias opciones manteniendo presionada la tecla Ctrl.</small>
             </div>
-            <!-- Comentarios -->
 
             <div class="form-group">
                 <label for="descripcion">Describa brevemente su caso:</label>
@@ -70,29 +103,43 @@
                 <small id="contador">0 / 300 caracteres</small>
             </div>
 
-
             <div class="form-group checkbox">
                 <input type="checkbox" id="anonimo" name="anonimo">
                 <label for="anonimo">Enviar de forma anónima</label>
             </div>
 
             <button type="submit" class="btn-unphu">Enviar</button>
-
         </form>
     </div>
+</div>
 
-    <script>
-        const textarea = document.getElementById("descripcion");
-        const contador = document.getElementById("contador");
+<footer class="main-footer">
+    <div class="footer-content">
+        <div class="footer-left">
+            <p><strong>UNPHU</strong> - Universidad Nacional Pedro Henríquez Ureña</p>
+            <p>Av. John F. Kennedy, Km 7 1/2, Santo Domingo, R.D.</p>
+        </div>
+        <div class="footer-right">
+            <p>&copy; 2026 BlackBox Project. Todos los derechos reservados.</p>
+            <a href="https://unphu.edu.do" target="_blank">unphu.edu.do</a>
+        </div>
+    </div>
+</footer>
 
-        function actualizarContador() {
-            const texto = textarea.value;
-            contador.textContent = `${texto.length} / 300 caracteres`;
-        }
+<script src="../JS/config.js"></script>
+<script src="../JS/navbar.js"></script>
+<script src="../JS/auth.js"></script>
+<script>
+    const textarea = document.getElementById("descripcion");
+    const contador = document.getElementById("contador");
 
-        actualizarContador(); // Ejecuta al cargar
+    function actualizarContador() {
+        const texto = textarea.value;
+        contador.textContent = `${texto.length} / 300 caracteres`;
+    }
 
-        textarea.addEventListener("input", actualizarContador);
-    </script>
+    actualizarContador();
+    textarea.addEventListener("input", actualizarContador);
+</script>
 </body>
 </html>
