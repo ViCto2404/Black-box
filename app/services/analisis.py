@@ -9,15 +9,22 @@ def _ejecutar_query(query):
 
 def get_periodos():
     """
-    Obtiene todos los periodos académicos únicos de la tabla de calificaciones.
+    Obtiene todos los periodos académicos únicos combinando las tablas de calificaciones y secciones.
     """
     try:
-        query = supabase.table("calificacion").select("periodo_academico").execute()
-        if not query.data:
-            return []
+        # Obtener periodos de calificaciones
+        res_cal = supabase.table("calificacion").select("periodo_academico").execute()
+        periodos_cal = [item["periodo_academico"] for item in res_cal.data] if res_cal.data else []
+
+        # Obtener periodos de secciones (para incluir periodos planificados sin notas)
+        res_sec = supabase.table("seccion").select("periodo").execute()
+        periodos_sec = [item["periodo"] for item in res_sec.data] if res_sec.data else []
+
+        # Combinar y extraer valores únicos
+        todos = set(periodos_cal + periodos_sec)
         
-        # Extraer valores únicos
-        periodos = sorted(list(set(item["periodo_academico"] for item in query.data)), reverse=True)
+        # Filtrar valores nulos o vacíos y ordenar
+        periodos = sorted([p for p in todos if p], reverse=True)
         return periodos
     except Exception as e:
         print(f"Error obteniendo periodos: {str(e)}")
