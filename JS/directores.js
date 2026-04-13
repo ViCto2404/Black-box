@@ -57,11 +57,12 @@ async function listarDirectores() {
 
         data.forEach(d => {
             const tr = document.createElement("tr");
+            const escuelaDisplay = d.nombre_escuela || d.codigo_escuela || 'Sin asignar';
             tr.innerHTML = `
                 <td>${d.id_unphu}</td>
                 <td>${d.nombre}</td>
                 <td>${d.correo_institucional}</td>
-                <td>${d.codigo_escuela || 'N/A'}</td>
+                <td>${escuelaDisplay}</td>
                 <td>
                     <button class="btn-editar" onclick="editarDirector('${d.id_unphu}')">✏️</button>
                     <button class="btn-eliminar" onclick="eliminarDirector('${d.id_unphu}')">🗑️</button>

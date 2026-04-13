@@ -47,17 +47,25 @@ def crear_escuela(payload: dict):
         if existente.data:
             return None, "Ya existe una escuela con ese código"
 
-        # Verificar que el director existe en la tabla directores
-        director = supabase.table("directores") \
-            .select("id_unphu") \
-            .eq("id_unphu", payload["id_director"]) \
-            .execute()
-        if not director.data:
-            return None, f"El director '{payload['id_director']}' no existe en el sistema"
+        # Verificar que el director existe
+        id_dir = payload.get("id_director")
+        if id_dir:
+            director = supabase.table("directores") \
+                .select("id_unphu") \
+                .eq("id_unphu", id_dir) \
+                .execute()
+            if not director.data:
+                return None, f"El director '{id_dir}' no existe"
 
+        # Insertar escuela
         data = supabase.table("escuelas").insert(payload).execute()
         if not data.data:
             return None, "Error al crear la escuela"
+        
+        # Sincronizar: Actualizar al director con su nueva escuela
+        if id_dir:
+            supabase.table("directores").update({"codigo_escuela": payload["codigo"]}).eq("id_unphu", id_dir).execute()
+
         return data.data[0], None
     except Exception as e:
         return None, f"Error inesperado: {str(e)}"
@@ -69,20 +77,30 @@ def actualizar_escuela(codigo: str, payload: dict):
         if not payload_limpio:
             return None, "No hay campos para actualizar"
         
-        if "id_director" in payload_limpio:
-            director = supabase.table("directores") \
-                .select("id_unphu") \
-                .eq("id_unphu", payload_limpio["id_director"]) \
-                .execute()
-            if not director.data:
-                return None, f"El director '{payload_limpio['id_director']}' no existe en el sistema"
+        # Si se está cambiando el director
+        nuevo_id_dir = payload_limpio.get("id_director")
+        if nuevo_id_dir:
+            # 1. Verificar que el nuevo director exista
+            director_res = supabase.table("directores").select("id_unphu").eq("id_unphu", nuevo_id_dir).execute()
+            if not director_res.data:
+                return None, f"El director '{nuevo_id_dir}' no existe"
 
-        data = supabase.table("escuelas") \
-            .update(payload_limpio) \
-            .eq("codigo", codigo) \
-            .execute()
+            # 2. Obtener el director actual de esta escuela para "liberarlo"
+            escuela_actual = supabase.table("escuelas").select("id_director").eq("codigo", codigo).single().execute()
+            if escuela_actual.data and escuela_actual.data["id_director"]:
+                id_dir_anterior = escuela_actual.data["id_director"]
+                # Limpiar la escuela del director anterior
+                supabase.table("directores").update({"codigo_escuela": None}).eq("id_unphu", id_dir_anterior).execute()
+
+        # 3. Actualizar la escuela
+        data = supabase.table("escuelas").update(payload_limpio).eq("codigo", codigo).execute()
         if not data.data:
             return None, "Escuela no encontrada"
+
+        # 4. Sincronizar al nuevo director
+        if nuevo_id_dir:
+            supabase.table("directores").update({"codigo_escuela": codigo}).eq("id_unphu", nuevo_id_dir).execute()
+
         return data.data[0], None
     except Exception as e:
         return None, f"Error inesperado: {str(e)}"
