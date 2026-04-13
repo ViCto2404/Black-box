@@ -84,14 +84,14 @@ def get_materias_criticas(periodo: str, codigo_escuela: str= None, codigo_carrer
     
     return df_criticas[columnas_solicitadas].sort_values("porcentaje_reprobacion", ascending=False).to_dict(orient="records")
 
-def get_resumen_periodo(periodo: str, escuela: str = None, codigo_carrera: str = None):
-    print(f"DEBUG: get_resumen_periodo - Periodo: {periodo}, Escuela: {escuela}, Carrera: {codigo_carrera}")
+def get_resumen_periodo(periodo: str, escuela: str = None, codigo_carrera: str = None, codigo_materia: str = None):
+    print(f"DEBUG: get_resumen_periodo - Periodo: {periodo}, Escuela: {escuela}, Carrera: {codigo_carrera}, Materia: {codigo_materia}")
     
     # Consulta dinámica
     select_fields = "nota, id_seccion, id_estudiante"
     
+    # Si hay filtros externos que requieren join
     if escuela or codigo_carrera:
-        # Se requiere join con materia y carreras para filtrar por escuela o carrera
         select_fields += ", materia!inner(codigo_carrera, carreras!inner(codigo_escuela))"
         
     query = supabase.table("calificacion").select(select_fields).eq("periodo_academico", periodo)
@@ -101,6 +101,9 @@ def get_resumen_periodo(periodo: str, escuela: str = None, codigo_carrera: str =
     
     if codigo_carrera:
         query = query.eq("materia.codigo_carrera", codigo_carrera)
+        
+    if codigo_materia:
+        query = query.eq("codigo_materia", codigo_materia)
 
     try:
         data = _ejecutar_query(query)
@@ -209,6 +212,73 @@ def get_masa_estudiantil(codigo_carrera: str = None, escuela: str = None):
     ).reset_index()
 
     return resumen.to_dict(orient="records")
+
+def get_detalle_materia_secciones(codigo_materia: str, periodo: str):
+    """
+    Obtiene el detalle de rendimiento de una materia específica, desglosado por todas sus secciones registradas.
+    Toma como base la tabla 'seccion' para asegurar que aparezcan todas las filas (secciones) existentes.
+    """
+    try:
+        # 1. Obtener todas las secciones registradas para esa materia y periodo
+        # Traemos también el nombre de la materia a través de la relación
+        query_secciones = supabase.table("seccion") \
+            .select("id, codigo_seccion, materia!inner(nombre), profesor!inner(nombre)") \
+            .eq("materia", codigo_materia) \
+            .eq("periodo", periodo)
+        
+        data_secciones = _ejecutar_query(query_secciones)
+        if not data_secciones:
+            return []
+        
+        # ... (resto de la lógica de notas igual)
+        
+        # 2. Obtener TODAS las calificaciones para esta materia y periodo
+        query_notas = supabase.table("calificacion") \
+            .select("nota, id_seccion, id_estudiante") \
+            .eq("codigo_materia", codigo_materia) \
+            .eq("periodo_academico", periodo)
+        
+        data_notas = _ejecutar_query(query_notas)
+        df_notas = pd.DataFrame(data_notas) if data_notas else pd.DataFrame(columns=["nota", "id_seccion", "id_estudiante"])
+
+        # Procesar los datos de las secciones
+        resultados = []
+        for sec in data_secciones:
+            sid = sec["id"]
+            cod_visual = sec["codigo_seccion"]
+            nombre_mat = sec["materia"]["nombre"] if isinstance(sec.get("materia"), dict) else "N/A"
+            nombre_prof = sec["profesor"]["nombre"] if isinstance(sec.get("profesor"), dict) else "N/A"
+            
+            # Filtrar notas para esta sección específica
+            notas_seccion = df_notas[df_notas["id_seccion"] == sid]
+            
+            total_est = len(notas_seccion)
+            if total_est > 0:
+                promedio = round(notas_seccion["nota"].mean(), 2)
+                aprobados = (notas_seccion["nota"] >= 70).sum()
+                porcentaje_aprobacion = round((aprobados / total_est) * 100, 2)
+            else:
+                promedio = 0.0
+                aprobados = 0
+                porcentaje_aprobacion = 0.0
+            
+            estado = "Crítico" if (total_est > 0 and porcentaje_aprobacion < 70) else "Normal"
+            
+            resultados.append({
+                "seccion_id_pk": sid,
+                "id_seccion_display": cod_visual,
+                "nombre_materia": nombre_mat,
+                "nombre_profesor": nombre_prof,
+                "total_estudiantes": total_est,
+                "promedio": promedio,
+                "porcentaje_aprobacion": porcentaje_aprobacion,
+                "estado": estado
+            })
+            
+        return resultados
+    except Exception as e:
+        print(f"Error en get_detalle_materia_secciones: {str(e)}")
+        return []
 
 def get_detalle_feedback(codigo_carrera: str = None):
     query = supabase.table("feedback").select('fecha_envio, aspectos_evaluar, es_anonimo, comentario, id_estudiante, "queja/sugerencia"').order("fecha_envio", desc=True)

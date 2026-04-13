@@ -1,12 +1,19 @@
 from app.database.supabase_client import supabase
 
 
-def get_todas_materias(estado: str = None, codigo_carrera: str = None):
-    query = supabase.table("materia").select("*")
+def get_todas_materias(estado: str = None, codigo_carrera: str = None, codigo_escuela: str = None):
+    # Si filtramos por escuela, necesitamos el join con carreras
+    if codigo_escuela:
+        query = supabase.table("materia").select("*, carreras!inner(codigo_escuela)")
+        query = query.eq("carreras.codigo_escuela", codigo_escuela)
+    else:
+        query = supabase.table("materia").select("*")
+        
     if estado:
         query = query.eq("estado", estado)
     if codigo_carrera:
         query = query.eq("codigo_carrera", codigo_carrera)
+        
     data = query.execute()
     return data.data if data.data else []
 

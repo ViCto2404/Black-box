@@ -7,9 +7,10 @@ router = APIRouter(prefix="/materias", tags=["Materias"])
 @router.get("/")
 def listar_materias(
     estado:         str = Query(default=None),
-    codigo_carrera: str = Query(default=None)
+    codigo_carrera: str = Query(default=None),
+    codigo_escuela: str = Query(default=None)
 ):
-    return svc.get_todas_materias(estado, codigo_carrera)
+    return svc.get_todas_materias(estado, codigo_carrera, codigo_escuela)
 
 @router.get("/{codigo}")
 def obtener_materia(codigo: str):

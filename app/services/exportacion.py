@@ -12,7 +12,8 @@ from app.services.analisis import(
     get_rendimiento_por_materia,
     get_materias_criticas,
     get_masa_estudiantil,
-    get_detalle_feedback
+    get_detalle_feedback,
+    get_detalle_materia_secciones
 )
 
 # --- Helpers de Formato ---
@@ -71,35 +72,41 @@ def _get_pdf_base(buffer, title, subtitle, usuario_actual="ADMIN---UNPHU", repor
     
     return doc, story, styles
 
-def _add_academic_summary(story, styles, periodo):
+def _add_academic_summary(story, styles, periodo, codigo_materia=None):
     """
     Agrega una sección de resumen académico al final de los reportes PDF.
+    Calcula los datos a partir del rendimiento por materia para garantizar consistencia con las tablas.
     """
     if not periodo:
-        periodos = get_periodos()
-        if not periodos:
-            return
-        periodo = periodos[0]
+        return
 
-    resumen = get_resumen_periodo(periodo)
-    rendimiento = get_rendimiento_por_materia(periodo)
-    
+    # Si es para una materia específica, usamos su detalle de secciones
+    if codigo_materia:
+        data = get_detalle_materia_secciones(codigo_materia, periodo)
+        total_secciones = len(data)
+        secciones_criticas = sum(1 for d in data if d["estado"] == "Crítico")
+        promedio_general = sum(d["promedio"] for d in data) / total_secciones if total_secciones > 0 else 0
+        aprobacion_promedio = sum(d["porcentaje_aprobacion"] for d in data) / total_secciones if total_secciones > 0 else 0
+    else:
+        # Si es general, lo basamos en el rendimiento por materia (que es lo que muestran las tablas generales)
+        rendimiento = get_rendimiento_por_materia(periodo)
+        if not rendimiento:
+            return
+        
+        total_secciones = len(rendimiento) # Aquí cada materia cuenta como una unidad de análisis en reportes generales
+        secciones_criticas = sum(1 for r in rendimiento if r.get("porcentaje_reprobacion", 0) > 30)
+        promedio_general = sum(r["promedio"] for r in rendimiento) / total_secciones if total_secciones > 0 else 0
+        aprobacion_promedio = sum(r["porcentaje_aprobacion"] for r in rendimiento) / total_secciones if total_secciones > 0 else 0
+
     story.append(Spacer(1, 0.5 * inch))
     story.append(Paragraph("<b>Resumen académico del Periodo</b>", styles["Normal"]))
     story.append(Spacer(1, 0.1 * inch))
 
-    # Cálculo de materias críticas (reprobación > 30%)
-    materias_criticas = 0
-    if rendimiento:
-        for r in rendimiento:
-            if r.get("porcentaje_reprobacion", 0) > 30:
-                materias_criticas += 1
-
     resumen_data = [
-        ["Total de estudiantes analizados", str(resumen.get("total_estudiantes", 0))],
-        ["Total de materias del periodo", str(len(rendimiento)) if rendimiento else "0"],
-        ["Índice de aprobación global", f"{resumen.get('indice_aprobacion', 0):.2f}%"],
-        ["Cantidad de materias críticas", str(materias_criticas)],
+        ["Total de unidades analizadas", str(total_secciones)],
+        ["Unidades en estado crítico", str(secciones_criticas)],
+        ["Promedio general", f"{promedio_general:.2f}"],
+        ["Índice de aprobación promedio", f"{aprobacion_promedio:.2f}%"],
     ]
 
     resumen_tab = Table(resumen_data, colWidths=[3 * inch, 1.5 * inch], hAlign='LEFT')
@@ -127,18 +134,18 @@ def _add_feedback_summary(story, styles, codigo_carrera, feedback_data):
         if id_est:
             participantes_unicos.add(id_est)
         
-        # Analizar aspectos_evaluar para clasificar
-        aspectos = f.get("aspectos_evaluar", "").upper()
-        if "QUEJA" in aspectos:
+        # Analizar 'queja/sugerencia' para clasificar
+        tipo = str(f.get("queja/sugerencia", "")).lower()
+        if "queja" in tipo:
             quejas += 1
-        elif "SUGERENCIA" in aspectos:
+        elif "sugerencia" in tipo:
             sugerencias += 1
 
     cant_participantes = len(participantes_unicos)
 
     # 2. % de participación
-    # get_masa_estudiantil(codigo_carrera) devuelve lista de dicts por carrera
-    masa = get_masa_estudiantil(codigo_carrera)
+    # get_masa_estudiantil(codigo_carrera=codigo_carrera) devuelve lista de dicts por carrera
+    masa = get_masa_estudiantil(codigo_carrera=codigo_carrera)
     total_estudiantes_masa = sum(m.get("total_general", 0) for m in masa)
     
     porcentaje_participacion = (cant_participantes / total_estudiantes_masa * 100) if total_estudiantes_masa > 0 else 0
@@ -479,6 +486,116 @@ def exportar_feedback_pdf(codigo_carrera: str = None, usuario_actual: str = "ADM
         story.append(t)
     
     _add_feedback_summary(story, styles, codigo_carrera, feedback)
+    
+    doc.build(story)
+    return buffer.getvalue()
+
+# --- Reporte 6: Detalle por Materia y Secciones ---
+
+def exportar_materia_detalle_excel(codigo_materia: str, periodo: str):
+    data = get_detalle_materia_secciones(codigo_materia, periodo)
+    buffer = BytesIO()
+    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+        wb = writer.book
+        fmt = _get_excel_formats(wb)
+        if not data:
+            ws = wb.add_worksheet("Detalle Materia"); ws.write("A1", "No hay datos para este periodo"); return buffer.getvalue()
+        
+        df = pd.DataFrame(data)
+        nombre_materia = df["nombre_materia"].iloc[0] if not df.empty else codigo_materia
+        
+        # Reordenar y renombrar columnas
+        df = df[["id_seccion", "nombre_profesor", "total_estudiantes", "promedio", "porcentaje_aprobacion", "estado"]]
+        df.columns = ["Sección", "Profesor", "Estudiantes", "Promedio", "% Aprobación", "Estado"]
+        
+        df.to_excel(writer, sheet_name="Detalle Materia", index=False, startrow=1)
+        ws = writer.sheets["Detalle Materia"]
+        ws.set_column("A:A", 12); ws.set_column("B:B", 35); ws.set_column("C:F", 15)
+        ws.write("A1", f"Análisis de {nombre_materia} ({codigo_materia}) — {periodo}", fmt["title"])
+        for col_num, col_name in enumerate(df.columns): ws.write(1, col_num, col_name, fmt["header"])
+        
+        for row_num, row in enumerate(df.itertuples(), start=2):
+            f_cell = fmt["red"] if row.Estado == "Crítico" else fmt["green"]
+            ws.write(row_num, 5, row.Estado, f_cell)
+            
+    return buffer.getvalue()
+
+def exportar_materia_detalle_pdf(codigo_materia: str, periodo: str, usuario_actual: str = "ADMIN---UNPHU"):
+    data = get_detalle_materia_secciones(codigo_materia, periodo)
+    buffer = BytesIO()
+    nombre_materia = data[0]["nombre_materia"] if data else codigo_materia
+    
+    doc, story, styles = _get_pdf_base(
+        buffer, 
+        f"Análisis Detallado de Asignatura", 
+        f"Materia: {nombre_materia} ({codigo_materia}) | Periodo: {periodo}", 
+        usuario_actual,
+        "ACAD---MAT---RPT"
+    )
+
+    story.append(Paragraph(f"<b>Desglose por Secciones</b>", styles["Normal"]))
+    story.append(Spacer(1, 0.1*inch))
+
+    if not data:
+        story.append(Paragraph("No hay información disponible para esta materia en el periodo seleccionado.", styles["Normal"]))
+    else:
+        # Encabezados: Sección, Profesor, Cant. Estudiantes, Prom., % Aprob., Estado
+        header = [["Sección", "Profesor", "Cant. Estudiantes", "Prom.", "% Aprob.", "Estado"]]
+        rows = []
+        for d in data:
+            rows.append([
+                d["id_seccion_display"],
+                d["nombre_profesor"][:30],
+                str(d["total_estudiantes"]),
+                f"{d['promedio']:.2f}",
+                f"{d['porcentaje_aprobacion']}%",
+                d["estado"]
+            ])
+            
+        t = Table(header + rows, colWidths=[0.8*inch, 2.0*inch, 1.2*inch, 0.7*inch, 0.9*inch, 0.9*inch], hAlign='CENTER')
+        t.setStyle(TableStyle([
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('LINEBELOW', (0, 0), (-1, 0), 1, colors.black),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ]))
+        
+        # Aplicar colores condicionales a la columna "Estado"
+        for i, d in enumerate(data):
+            color = colors.red if d["estado"] == "Crítico" else colors.green
+            t.setStyle(TableStyle([
+                ('TEXTCOLOR', (5, i+1), (5, i+1), color),
+                ('FONTNAME', (5, i+1), (5, i+1), 'Helvetica-Bold'),
+            ]))
+            
+        story.append(t)
+    
+        # --- NUEVA LÓGICA: Calcular resumen directamente de 'data' para evitar discrepancias ---
+        total_secciones = len(data)
+        secciones_criticas = sum(1 for d in data if d["estado"] == "Crítico")
+        promedio_general = sum(d["promedio"] for d in data) / total_secciones if total_secciones > 0 else 0
+        
+        # El índice de aprobación promedio de las secciones
+        aprobacion_promedio = sum(d["porcentaje_aprobacion"] for d in data) / total_secciones if total_secciones > 0 else 0
+
+        story.append(Spacer(1, 0.5 * inch))
+        story.append(Paragraph("<b>Resumen académico del Periodo</b>", styles["Normal"]))
+        story.append(Spacer(1, 0.1 * inch))
+
+        resumen_data = [
+            ["Total de secciones analizadas", str(total_secciones)],
+            ["Secciones en estado crítico", str(secciones_criticas)],
+            ["Promedio general de las secciones", f"{promedio_general:.2f}"],
+            ["Índice de aprobación de las secciones", f"{aprobacion_promedio:.2f}%"],
+        ]
+
+        resumen_tab = Table(resumen_data, colWidths=[3 * inch, 1.5 * inch], hAlign='LEFT')
+        resumen_tab.setStyle(TableStyle([
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('ALIGN', (1, 0), (1, -1), 'LEFT'),
+        ]))
+        story.append(resumen_tab)
     
     doc.build(story)
     return buffer.getvalue()

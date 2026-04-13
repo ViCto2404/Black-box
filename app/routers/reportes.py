@@ -89,6 +89,17 @@ def reporte_masa(periodo: str, format: Literal["excel", "pdf"] = Query("excel"))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/materia/{codigo_materia}/{periodo}", responses=RESPONSES_METADATA)
+def reporte_materia_detalle(codigo_materia: str, periodo: str, format: Literal["excel", "pdf"] = Query("excel")):
+    try:
+        if format == "excel":
+            contenido = exportacion.exportar_materia_detalle_excel(codigo_materia, periodo)
+        else:
+            contenido = exportacion.exportar_materia_detalle_pdf(codigo_materia, periodo)
+        return generar_respuesta(contenido, f"detalle_materia_{codigo_materia}", format, periodo)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/feedback", responses=RESPONSES_METADATA)
 def reporte_feedback(codigo_carrera: Optional[str] = Query(None), format: Literal["excel", "pdf"] = Query("excel")):
     try:
