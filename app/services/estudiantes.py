@@ -140,7 +140,7 @@ def carga_masiva_estudiantes(registros: list):
     return {"insertados": insertados, "errores": errores}
 
 def generar_plantilla_estudiante():
-    columnas = ["id_unphu", "nombre", "codigo_carrera", "estado_activo", "correo_institucional"]
+    columnas = ["id_unphu", "nombre", "codigo_carrera", "estado_activo", "correo_institucional", "periodo_inscripcion"]
     df = pd.DataFrame(columns=columnas)
 
     ejemplo = {
@@ -148,7 +148,8 @@ def generar_plantilla_estudiante():
         "nombre": "Juan Perez",
         "codigo_carrera": "INF",
         "estado_activo": "Activo",
-        "correo_institucional": "j.perez@unphu.edu.do"
+        "correo_institucional": "j.perez@unphu.edu.do",
+        "periodo_inscripcion": "01-2025"
     }
     df.loc[0] = ejemplo
 

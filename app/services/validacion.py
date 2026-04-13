@@ -3,7 +3,7 @@ from io import BytesIO
 
 COLUMNAS_CALIFICACIONES = {"id_estudiante", "codigo_materia", "id_seccion", "nota", "periodo_academico"}
 COLUMNAS_SECCIONES = {"codigo_seccion", "materia", "profesor", "periodo", "aula", "cupo_max", "horario", "estado"}
-COLUMNAS_ESTUDIANTES = {"id_unphu", "nombre", "codigo_carrera", "estado_activo", "correo_institucional"}
+COLUMNAS_ESTUDIANTES = {"id_unphu", "nombre", "codigo_carrera", "estado_activo", "correo_institucional", "periodo_inscripcion"}
 
 def leer_archivo(contenido: bytes, nombre_archivo: str) -> pd.DataFrame:
     if nombre_archivo.endswith(".csv"):
@@ -108,6 +108,9 @@ def validar_datos_estudiantes(df: pd.DataFrame):
         elif "@" not in str(row.get("correo_institucional")):
             errores.append(f"Fila {fila}: correo_institucional '{row['correo_institucional']}' no es valido")
 
+        if pd.isna(row.get("periodo_inscripcion")) or str(row.get("periodo_inscripcion")).strip() == "":
+            errores.append(f"Fila {fila}: periodo_inscripcion vacio")
+
     return errores
 
 def preparar_registros_calificaciones(df: pd.DataFrame) -> list:
@@ -162,7 +165,8 @@ def preparar_registros_estudiantes(df: pd.DataFrame) -> list:
             "nombre": str(row["nombre"]).strip(),
             "codigo_carrera": str(row["codigo_carrera"]).strip(),
             "estado_activo": str(row["estado_activo"]).strip() if not pd.isna(row.get("estado_activo")) else "Activa",
-            "correo_institucional": str(row["correo_institucional"]).strip()
+            "correo_institucional": str(row["correo_institucional"]).strip(),
+            "periodo_inscripcion": str(row["periodo_inscripcion"]).strip()
         })
 
     return registros

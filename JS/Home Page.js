@@ -58,10 +58,8 @@ async function actualizarDashboard() {
         })
         .catch(err => console.error("Error en resumen:", err));
 
-    // 2. Gráfico de Masa Estudiantil (Solo se carga si NO hay una carrera específica seleccionada o al inicio)
-    // El gráfico de masa es por carrera, si filtramos por una, el pastel no tiene sentido.
-    // Pero para evitar que desaparezca, lo cargamos siempre con el filtro de escuela.
-    const urlMasa = `${BASE_API}/dashboard/masa-estudiantil${params}`;
+    // 2. Gráfico de Masa Estudiantil (Filtrado por escuela y periodo)
+    const urlMasa = `${BASE_API}/dashboard/masa-estudiantil${params}${params ? '&' : '?'}periodo=${periodo}`;
     fetch(urlMasa)
         .then(res => res.json())
         .then(data => {

@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Secciones</title>
+    <title>Gestión de Calificaciones - BlackBox</title>
     <link rel="icon" type="image/x-icon" href="https://unphu.edu.do/favicon.ico">
     <link rel="stylesheet" href="CSS/global.css">
-    <link rel="stylesheet" href="CSS/secciones.css">
+    <link rel="stylesheet" href="CSS/materias.css"> <!-- Reutilizamos estilos de tabla/modal -->
 </head>
 <body>
 
@@ -32,7 +32,7 @@
             <a href="Materias.html">Materias</a>
             <a href="Seccion.html">Secciones</a>
             <a href="Profesor.html">Profesores</a>
-            <a href="calificaciones.html">Calificaciones</a>
+            <a href="calificaciones.html" class="active">Calificaciones</a>
         </div>
 
         <button class="dropdown-btn">👨‍🎓 Estudiantes ▼</button>
@@ -59,88 +59,99 @@
     <div class="header-tabla">
         <div class="titulo-seccion">
             <h2>Gestión de</h2>
-            <h1>Secciones</h1>
+            <h1>Calificaciones</h1>
         </div>
-        <button class="btn-unphu-largo" onclick="abrirModal()">+ NUEVA SECCIÓN</button>
+        <button class="btn-unphu-largo" onclick="abrirModal()">+ AÑADIR CALIFICACIÓN</button>
+    </div>
+
+    <!-- Filtros de búsqueda -->
+    <div class="card-tabla" style="margin-bottom: 20px; padding: 20px;">
+        <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
+            <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 200px;">
+                <label>Periodo</label>
+                <select id="filtroPeriodo" onchange="listarCalificaciones()"></select>
+            </div>
+            <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 200px;">
+                <label>Materia</label>
+                <select id="filtroMateria" onchange="listarCalificaciones()">
+                    <option value="">Todas las materias</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 200px;">
+                <label>Estudiante (ID)</label>
+                <input type="text" id="filtroEstudiante" placeholder="Ej: 24-0001" onkeyup="if(event.key==='Enter') listarCalificaciones()">
+            </div>
+            <button class="btn-unphu" onclick="listarCalificaciones()" style="height: 45px;">Buscar</button>
+        </div>
     </div>
 
     <div class="card-tabla">
         <div class="card-header">
-            <h3>Lista de Secciones</h3>
+            <h3>Listado de Calificaciones Individuales</h3>
         </div>
+
         <div class="table-scroll">
-            <table id="tablaSecciones">
+            <table id="tablaCalificaciones">
                 <thead>
                     <tr>
-                        <th>Código</th>
+                        <th>Estudiante</th>
                         <th>Materia</th>
-                        <th>Profesor</th>
-                        <th>Aula</th>
-                        <th>Estado</th>
+                        <th>Sección</th>
+                        <th>Periodo</th>
+                        <th>Nota</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
-                <tbody></tbody>
+                <tbody>
+                    <!-- Dinámico -->
+                </tbody>
             </table>
         </div>
     </div>
 </div>
 
-<div id="modalSeccion" class="modal">
+<!-- Modal para Añadir/Editar Calificación -->
+<div id="modalCalificacion" class="modal">
     <div class="modal-content">
         <div class="form-container admin">
             <span class="cerrar" onclick="cerrarModal()">&times;</span>
             <div class="form-header">
-                <h2 id="modalTitle">Nueva Sección</h2>
+                <h2 id="modalTitle">Nueva Calificación</h2>
+                <p>Registro Individual de Rendimiento</p>
             </div>
 
-            <form id="crearSeccionForm">
+            <form id="calificacionForm">
                 <p class="form-note"><span class="required">*</span> Campos obligatorios</p>
-
+                
                 <div class="form-group">
-                    <label>Código Sección <span class="required">*</span></label>
-                    <input type="text" id="codigoSeccion" required placeholder="Ej: INF101-01">
+                    <label for="id_estudiante">ID Estudiante <span class="required">*</span></label>
+                    <input type="text" id="id_estudiante" name="id_estudiante" required placeholder="Ej: 24-0001">
                 </div>
 
                 <div class="form-group">
-                    <label>Materia <span class="required">*</span></label>
-                    <select id="materiaSeccion" required>
-                        <option value="">Seleccione Materia</option>
+                    <label for="codigo_materia">Materia <span class="required">*</span></label>
+                    <select id="codigo_materia" name="codigo_materia" required onchange="cargarPeriodosPorMateria()">
+                        <option value="">Seleccione una materia</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label>Profesor</label>
-                    <select id="profesorSeccion">
-                        <option value="">Seleccione Profesor (Opcional)</option>
+                    <label for="periodo_academico">Periodo <span class="required">*</span></label>
+                    <select id="periodo_academico" name="periodo_academico" required onchange="cargarSeccionesPorMateriaYPeriodo()">
+                        <option value="">Seleccione una materia primero</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label>Aula</label>
-                    <input type="text" id="aula" placeholder="Opcional">
-                </div>
-
-                <div class="form-group">
-                    <label>Cupo Máximo <span class="required">*</span></label>
-                    <input type="number" id="cupoSeccion" min="1" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Estado</label>
-                    <select id="estadoSeccion">
-                        <option value="Activa">Activa</option>
-                        <option value="Cerrada">Cerrada</option>
+                    <label for="id_seccion">Sección <span class="required">*</span></label>
+                    <select id="id_seccion" name="id_seccion" required>
+                        <option value="">Seleccione un periodo primero</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <label style="margin: 0;">Horarios (Máx 3 - Opcional)</label>
-                        <button type="button" class="btn-editar" onclick="agregarHorario()" style="width: auto; padding: 5px 15px;">+ Agregar</button>
-                    </div>
-                    <div id="contenedorHorarios">
-                        </div>
+                    <label for="nota">Calificación Final (0-100) <span class="required">*</span></label>
+                    <input type="number" id="nota" name="nota" min="0" max="100" step="0.01" required>
                 </div>
 
                 <div class="form-actions">
@@ -166,7 +177,7 @@
 </footer>
 
 <script src="JS/config.js"></script>
-<script src="JS/secciones.js"></script>
+<script src="JS/calificaciones.js"></script>
 <script src="JS/auth.js"></script>
 <script src="JS/navbar.js"></script>
 </body>

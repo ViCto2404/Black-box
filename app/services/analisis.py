@@ -164,7 +164,7 @@ def get_resumen_periodo(periodo: str, escuela: str = None, codigo_carrera: str =
         "total_estudiantes": total_estudiantes
     }
 
-def get_masa_estudiantil(codigo_carrera: str = None, escuela: str = None):
+def get_masa_estudiantil(codigo_carrera: str = None, escuela: str = None, periodo: str = None):
     # ESTRATEGIA: Si hay escuela, primero buscamos qué carreras pertenecen a esa escuela
     codigos_carreras_permitidos = []
     
@@ -182,10 +182,13 @@ def get_masa_estudiantil(codigo_carrera: str = None, escuela: str = None):
             return []
 
     # Ahora consultamos los estudiantes
-    query = supabase.table("estudiantes").select("id_unphu, estado_activo, codigo_carrera, carreras(nombre)")
+    query = supabase.table("estudiantes").select("id_unphu, estado_activo, codigo_carrera, periodo_inscripcion, carreras(nombre)")
     
     if codigo_carrera:
         query = query.eq("codigo_carrera", codigo_carrera)
+    
+    if periodo:
+        query = query.eq("periodo_inscripcion", periodo)
     
     # Filtro manual por la lista de carreras de la escuela
     if escuela and codigos_carreras_permitidos:

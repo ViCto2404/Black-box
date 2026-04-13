@@ -366,7 +366,7 @@ def exportar_materias_criticas_pdf(periodo: str, usuario_actual: str = "ADMIN---
 # --- Reporte 4: Detalle de masa estudiantil ---
 
 def exportar_masa_estudiantil_excel(periodo: str):
-    masa = get_masa_estudiantil(periodo)
+    masa = get_masa_estudiantil(periodo=periodo)
     buffer = BytesIO()
     with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
         wb = writer.book
@@ -378,12 +378,12 @@ def exportar_masa_estudiantil_excel(periodo: str):
         df.to_excel(writer, sheet_name="Masa Estudiantil", index=False, startrow=1)
         ws = writer.sheets["Masa Estudiantil"]
         ws.set_column("A:A", 15); ws.set_column("B:B", 40); ws.set_column("C:E", 15)
-        ws.write("A1", "Detalle de masa estudiantil", fmt["title"])
+        ws.write("A1", f"Detalle de masa estudiantil — {periodo}", fmt["title"])
         for col_num, col_name in enumerate(df.columns): ws.write(1, col_num, col_name, fmt["header"])
     return buffer.getvalue()
 
 def exportar_masa_estudiantil_pdf(periodo: str, usuario_actual: str = "ADMIN---UNPHU", codigo_escuela: str = None):
-    masa = get_masa_estudiantil(periodo)
+    masa = get_masa_estudiantil(periodo=periodo)
     buffer = BytesIO()
     doc, story, styles = _get_pdf_base(
         buffer, 
