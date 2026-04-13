@@ -29,13 +29,17 @@ async function actualizarDashboard() {
     }
 
     // 1. Cargar Resumen (KPIs)
-    const urlResumen = `${API_URL}/dashboard/resumen/${periodo}${params}${carreraSeleccionada ? '&codigo_carrera='+carreraSeleccionada : ''}`;
+    let urlResumen = `${API_URL}/dashboard/resumen/${periodo}${params}`;
+    if (carreraSeleccionada) {
+        urlResumen += (urlResumen.includes("?") ? "&" : "?") + `codigo_carrera=${carreraSeleccionada}`;
+    }
+
     fetch(urlResumen)
         .then(res => res.json())
         .then(data => {
             document.getElementById("promedio").textContent = Number(data.promedio_general || 0).toFixed(2);
             document.getElementById("tasaAprobacion").textContent = `${Number(data.indice_aprobacion || 0).toFixed(1)}%`;
-            document.getElementById("totalEstudiantes").textContent = data.total_secciones_analizadas || 0;
+            document.getElementById("totalEstudiantes").textContent = data.total_estudiantes || 0;
             document.getElementById("materiasCriticas").textContent = data.secciones_criticas || 0;
         })
         .catch(err => console.error("Error en resumen:", err));

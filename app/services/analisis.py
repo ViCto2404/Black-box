@@ -68,14 +68,23 @@ def get_materias_criticas(periodo: str, codigo_escuela: str= None, codigo_carrer
     
     return df_criticas[columnas_solicitadas].sort_values("porcentaje_reprobacion", ascending=False).to_dict(orient="records")
 
-def get_resumen_periodo(periodo: str, escuela: str = None):
-    print(f"DEBUG: get_resumen_periodo - Periodo: {periodo}, Escuela: {escuela}")
-    # Consulta directa sin transformaciones raras
-    if not escuela:
-        query = supabase.table("calificacion").select("nota, id_seccion").eq("periodo_academico", periodo)
-    else:
-        # Intentar filtrar por escuela a través de materia y carreras
-        query = supabase.table("calificacion").select("nota, id_seccion, materia!inner(carreras!inner(codigo_escuela))").eq("periodo_academico", periodo).eq("materia.carreras.codigo_escuela", escuela)
+def get_resumen_periodo(periodo: str, escuela: str = None, codigo_carrera: str = None):
+    print(f"DEBUG: get_resumen_periodo - Periodo: {periodo}, Escuela: {escuela}, Carrera: {codigo_carrera}")
+    
+    # Consulta dinámica
+    select_fields = "nota, id_seccion, id_estudiante"
+    
+    if escuela or codigo_carrera:
+        # Se requiere join con materia y carreras para filtrar por escuela o carrera
+        select_fields += ", materia!inner(codigo_carrera, carreras!inner(codigo_escuela))"
+        
+    query = supabase.table("calificacion").select(select_fields).eq("periodo_academico", periodo)
+    
+    if escuela:
+        query = query.eq("materia.carreras.codigo_escuela", escuela)
+    
+    if codigo_carrera:
+        query = query.eq("materia.codigo_carrera", codigo_carrera)
 
     try:
         data = _ejecutar_query(query)
@@ -86,8 +95,9 @@ def get_resumen_periodo(periodo: str, escuela: str = None):
             "secciones_criticas": 0,
             "promedio_general": 0.0,
             "indice_aprobacion": 0.0,
+            "total_estudiantes": 0,
             "error": str(e),
-            "debug_params": {"periodo": periodo, "escuela": escuela}
+            "debug_params": {"periodo": periodo, "escuela": escuela, "codigo_carrera": codigo_carrera}
         }
 
     if not data:
@@ -96,6 +106,7 @@ def get_resumen_periodo(periodo: str, escuela: str = None):
             "secciones_criticas": 0,
             "promedio_general": 0.0,
             "indice_aprobacion": 0.0,
+            "total_estudiantes": 0,
             "debug_msg": f"No data found for period: {periodo}, escuela: {escuela}"
         }
     
@@ -109,16 +120,18 @@ def get_resumen_periodo(periodo: str, escuela: str = None):
             "secciones_criticas": 0,
             "promedio_general": 0.0,
             "indice_aprobacion": 0.0,
+            "total_estudiantes": 0,
             "debug_msg": "Data found but 'nota' column is empty or invalid"
         }
 
     total_secciones = int(df["id_seccion"].nunique())
+    total_estudiantes = int(df["id_estudiante"].nunique())
     
     resumen_secciones = df.groupby("id_seccion").agg(
-        total_estudiantes=("nota", "count"),
+        total_estudiantes_seccion=("nota", "count"),
         reprobados=("nota", lambda x: (x < 70).sum())
     )
-    resumen_secciones["porcentaje_reprobacion"] = (resumen_secciones["reprobados"] / resumen_secciones["total_estudiantes"]) * 100
+    resumen_secciones["porcentaje_reprobacion"] = (resumen_secciones["reprobados"] / resumen_secciones["total_estudiantes_seccion"]) * 100
     secciones_criticas = int((resumen_secciones["porcentaje_reprobacion"] > 30).sum())
 
     promedio_general = round(float(df["nota"].mean()), 2)
@@ -128,7 +141,8 @@ def get_resumen_periodo(periodo: str, escuela: str = None):
         "total_secciones_analizadas": total_secciones,
         "secciones_criticas": secciones_criticas,
         "promedio_general": promedio_general,
-        "indice_aprobacion": indice_aprobacion
+        "indice_aprobacion": indice_aprobacion,
+        "total_estudiantes": total_estudiantes
     }
 
 def get_masa_estudiantil(codigo_carrera: str = None, escuela: str = None):

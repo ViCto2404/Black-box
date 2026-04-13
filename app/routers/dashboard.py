@@ -4,8 +4,12 @@ from app.services import analisis
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
 @router.get("/resumen/{periodo}")
-def resumen_periodo(periodo:str, escuela: str = Query(default=None)):
-    return analisis.get_resumen_periodo(periodo, escuela)
+def resumen_periodo(
+    periodo:str,
+    escuela: str = Query(default=None),
+    codigo_carrera: str = Query(default=None)
+):
+    return analisis.get_resumen_periodo(periodo, escuela, codigo_carrera)
 
 @router.get("/rendimiento/{periodo}")
 def rendimiento_materias(
