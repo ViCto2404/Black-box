@@ -17,7 +17,8 @@ def resumen_feedback():
 
 @router.post("/", status_code=201)
 def crear_feedback(payload: FeedbackCreate):
-    feedback, error = svc.crear_feedback(payload.model_dump())
+    # Usar by_alias=True para que el campo llegue a la BD como "queja/sugerencia"
+    feedback, error = svc.crear_feedback(payload.model_dump(by_alias=True))
     if error:
         raise HTTPException(status_code=400, detail=error)
     return feedback
