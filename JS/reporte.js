@@ -84,7 +84,7 @@ async function cargarMateriasModal() {
 async function cargarPeriodosModal() {
     const select = document.getElementById("modalPeriodoSelect");
     try {
-        const response = await fetch(`${API_BASE_REPORTE}/calificaciones/periodos`, {
+        const response = await fetch(`${API_BASE_REPORTE}/dashboard/periodos`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         const periodos = await response.json();
@@ -120,8 +120,13 @@ async function confirmarDescargaMateria() {
     btn.disabled = true;
     btn.textContent = "⌛ Generando...";
 
+    const usuarioActual = localStorage.getItem("id_unphu") || localStorage.getItem("username") || "ADMIN---UNPHU";
+    const codigoEscuela = localStorage.getItem("codigoEscuela") || "";
+
     try {
-        const endpoint = `/reportes/materia/${codigoMateria}/${periodo}?format=${formato}`;
+        let endpoint = `/reportes/materia/${codigoMateria}/${periodo}?format=${formato}&usuario_actual=${usuarioActual}`;
+        if (codigoEscuela) endpoint += `&codigo_escuela=${codigoEscuela}`;
+
         const nombreArchivo = `Analisis_Materia_${codigoMateria}_${periodo}.${formato === 'excel' ? 'xlsx' : 'pdf'}`;
 
         const response = await fetch(`${API_BASE_REPORTE}${endpoint}`, {
@@ -169,21 +174,15 @@ async function descargarReporte() {
     }
     
     const periodo = `${cuatri}-${anio}`;
-    const userRole = localStorage.getItem("userRole");
-    const codigoEscuela = localStorage.getItem("codigoEscuela");
-
-    if (!formato) return;
-
-    formatoSelector.disabled = true;
-    const originalText = formatoSelector.options[0].text;
-    formatoSelector.options[0].text = "⌛ Generando...";
+    const usuarioActual = localStorage.getItem("id_unphu") || localStorage.getItem("username") || "ADMIN---UNPHU";
+    const codigoEscuela = localStorage.getItem("codigoEscuela") || "";
 
     try {
         let endpoint = "";
         let nombreArchivo = "";
-        let extraParams = `format=${formato}`;
+        let extraParams = `format=${formato}&usuario_actual=${usuarioActual}`;
         
-        if (userRole === "director" && codigoEscuela) {
+        if (codigoEscuela) {
             extraParams += `&codigo_escuela=${codigoEscuela}`;
         }
 

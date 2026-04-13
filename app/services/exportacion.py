@@ -29,7 +29,7 @@ def _get_excel_formats(wb):
         "cell": wb.add_format({"border": 1, "align": "center"})
     }
 
-def _get_pdf_base(buffer, title, subtitle, usuario_actual="ADMIN---UNPHU", report_code="ACAD---RPT"):
+def _get_pdf_base(buffer, title, subtitle, usuario_actual="ADMIN---UNPHU", report_code=None):
     doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
     styles = getSampleStyleSheet()
     
@@ -47,6 +47,9 @@ def _get_pdf_base(buffer, title, subtitle, usuario_actual="ADMIN---UNPHU", repor
     except:
         img = Paragraph("LOGO", styles["Normal"])
 
+    # El código de reporte mostrará el código de escuela si se provee, sino uno genérico
+    display_code = report_code if report_code else "ACAD---UNPHU---RPT"
+
     header_data = [
         [img, 
          [
@@ -57,7 +60,7 @@ def _get_pdf_base(buffer, title, subtitle, usuario_actual="ADMIN---UNPHU", repor
          [
              Paragraph(f"Usuario: {usuario_actual}", styles["Normal"]),
              Paragraph(f"Fecha: {datetime.now().strftime('%d/%m/%Y')}", styles["Normal"]),
-             Paragraph(f"Cód: {report_code}", styles["Normal"])
+             Paragraph(f"Cód: {display_code}", styles["Normal"])
          ]
         ]
     ]
@@ -182,16 +185,16 @@ def exportar_resumen_periodo_excel(periodo: str):
         ws.write("A2", f"Generado el {datetime.now().strftime('%d/%m/%Y %H:%M')}", fmt["value"])
         ws.write("A4", "Indicador", fmt["header"]); ws.write("B4", "Valor", fmt["header"])
         filas = [
-            ("Total secciones analizadas",   resumen.get("total_secciones_analizadas", 0)),
-            ("Secciones en estado crítico",  resumen.get("secciones_criticas", 0)),
+            ("Total unidades analizadas",   resumen.get("total_secciones_analizadas", 0)),
+            ("Unidades en estado crítico",  resumen.get("secciones_criticas", 0)),
             ("Promedio general",             resumen.get("promedio_general", 0)),
-            ("Índice de aprobación",         f"{resumen.get('indice_aprobacion', 0)}%"),
+            ("Índice de aprobación promedio", f"{resumen.get('indice_aprobacion', 0)}%"),
         ]
         for i, (label, value) in enumerate(filas, start=4):
             ws.write(i, 0, label, fmt["label"]); ws.write(i, 1, value, fmt["value"])
     return buffer.getvalue()
 
-def exportar_resumen_periodo_pdf(periodo: str, usuario_actual: str = "ADMIN---UNPHU"):
+def exportar_resumen_periodo_pdf(periodo: str, usuario_actual: str = "ADMIN---UNPHU", codigo_escuela: str = None):
     resumen = get_resumen_periodo(periodo)
     buffer = BytesIO()
     doc, story, styles = _get_pdf_base(
@@ -199,7 +202,7 @@ def exportar_resumen_periodo_pdf(periodo: str, usuario_actual: str = "ADMIN---UN
         "Reporte de Resumen Académico", 
         f"Periodo: {periodo}", 
         usuario_actual,
-        "ACAD---RES---RPT"
+        codigo_escuela if codigo_escuela else "ACAD---RES---RPT"
     )
     
     story.append(Paragraph("<b>Indicadores Generales</b>", styles["Normal"]))
@@ -207,10 +210,10 @@ def exportar_resumen_periodo_pdf(periodo: str, usuario_actual: str = "ADMIN---UN
 
     data = [
         ["Indicador", "Valor"],
-        ["Total secciones analizadas",   str(resumen.get("total_secciones_analizadas", 0))],
-        ["Secciones en estado crítico",  str(resumen.get("secciones_criticas", 0))],
-        ["Promedio general",             str(resumen.get("promedio_general", 0))],
-        ["Índice de aprobación",         f"{resumen.get('indice_aprobacion', 0)}%"],
+        ["Total de unidades analizadas", str(resumen.get("total_secciones_analizadas", 0))],
+        ["Unidades en estado crítico", str(resumen.get("secciones_criticas", 0))],
+        ["Promedio general", f"{resumen.get('promedio_general', 0):.2f}"],
+        ["Índice de aprobación promedio", f"{resumen.get('indice_aprobacion', 0):.2f}%"],
     ]
     t = Table(data, colWidths=[4*inch, 2.5*inch], hAlign='CENTER')
     t.setStyle(TableStyle([
@@ -250,7 +253,7 @@ def exportar_rendimiento_excel(periodo: str):
             ws.write(row_num, 5, row._6, f_cell); ws.write(row_num, 6, row._7, f_cell)
     return buffer.getvalue()
 
-def exportar_rendimiento_pdf(periodo: str, usuario_actual: str = "ADMIN---UNPHU"):
+def exportar_rendimiento_pdf(periodo: str, usuario_actual: str = "ADMIN---UNPHU", codigo_escuela: str = None):
     rendimiento = get_rendimiento_por_materia(periodo)
     buffer = BytesIO()
     
@@ -259,7 +262,7 @@ def exportar_rendimiento_pdf(periodo: str, usuario_actual: str = "ADMIN---UNPHU"
         "Reporte de Desempeño Académico", 
         f"Al {periodo}", 
         usuario_actual,
-        "ACAD---PER---RPT"
+        codigo_escuela if codigo_escuela else "ACAD---PER---RPT"
     )
 
     story.append(Paragraph("<b>Detalle de Rendimiento por Asignatura</b>", styles["Normal"]))
@@ -269,11 +272,6 @@ def exportar_rendimiento_pdf(periodo: str, usuario_actual: str = "ADMIN---UNPHU"
         story.append(Paragraph("No hay datos disponibles.", styles["Normal"]))
     else:
         data = [["Código", "Materia", "Estudiante\nActivos", "Promedio\ngeneral", "%Aprobación", "Estado"]]
-        
-        total_estudiantes = 0
-        materias_criticas = 0
-        suma_aprobacion = 0
-
         for r in rendimiento:
             estado_bd = r.get("estado_materia", "N/A")
             data.append([
@@ -284,11 +282,6 @@ def exportar_rendimiento_pdf(periodo: str, usuario_actual: str = "ADMIN---UNPHU"
                 f"{r['porcentaje_aprobacion']}%",
                 estado_bd
             ])
-            
-            total_estudiantes += r["total_estudiantes"]
-            suma_aprobacion += r['porcentaje_aprobacion']
-            if r.get("porcentaje_reprobacion", 0) > 30:
-                materias_criticas += 1
 
         t = Table(data, colWidths=[0.8*inch, 2.4*inch, 1.0*inch, 1.0*inch, 1.0*inch, 0.8*inch])
         t.setStyle(TableStyle([
@@ -327,7 +320,7 @@ def exportar_materias_criticas_excel(periodo: str):
         for col_num, col_name in enumerate(df.columns): ws.write(1, col_num, col_name, fmt["header"])
     return buffer.getvalue()
 
-def exportar_materias_criticas_pdf(periodo: str, usuario_actual: str = "ADMIN---UNPHU"):
+def exportar_materias_criticas_pdf(periodo: str, usuario_actual: str = "ADMIN---UNPHU", codigo_escuela: str = None):
     criticas = get_materias_criticas(periodo)
     buffer = BytesIO()
     doc, story, styles = _get_pdf_base(
@@ -335,7 +328,7 @@ def exportar_materias_criticas_pdf(periodo: str, usuario_actual: str = "ADMIN---
         "Detalle de Materias Críticas", 
         f"Periodo: {periodo}", 
         usuario_actual,
-        "ACAD---CRI---RPT"
+        codigo_escuela if codigo_escuela else "ACAD---CRI---RPT"
     )
 
     story.append(Paragraph("<b>Listado de Asignaturas en Estado Crítico</b>", styles["Normal"]))
@@ -389,7 +382,7 @@ def exportar_masa_estudiantil_excel(periodo: str):
         for col_num, col_name in enumerate(df.columns): ws.write(1, col_num, col_name, fmt["header"])
     return buffer.getvalue()
 
-def exportar_masa_estudiantil_pdf(periodo: str, usuario_actual: str = "ADMIN---UNPHU"):
+def exportar_masa_estudiantil_pdf(periodo: str, usuario_actual: str = "ADMIN---UNPHU", codigo_escuela: str = None):
     masa = get_masa_estudiantil(periodo)
     buffer = BytesIO()
     doc, story, styles = _get_pdf_base(
@@ -397,7 +390,7 @@ def exportar_masa_estudiantil_pdf(periodo: str, usuario_actual: str = "ADMIN---U
         "Detalle de Masa Estudiantil", 
         f"Periodo: {periodo}", 
         usuario_actual,
-        "ACAD---MAS---RPT"
+        codigo_escuela if codigo_escuela else "ACAD---MAS---RPT"
     )
 
     story.append(Paragraph("<b>Distribución de Estudiantes por Carrera</b>", styles["Normal"]))
@@ -436,7 +429,6 @@ def exportar_feedback_excel(codigo_carrera: str = None):
         if not feedback:
             ws = wb.add_worksheet("Feedback"); ws.write("A1", "No hay datos"); return buffer.getvalue()
         df = pd.DataFrame(feedback)
-        # Seleccionar solo las columnas necesarias para el Excel
         df = df[["fecha_envio", "codigo_carrera", "aspectos_evaluar", "es_anonimo_str", "comentario"]]
         df.columns = ["Fecha", "Carrera", "Tipo de queja", "Anónimo", "Comentario"]
         df.to_excel(writer, sheet_name="Feedback", index=False, startrow=1)
@@ -446,7 +438,7 @@ def exportar_feedback_excel(codigo_carrera: str = None):
         for col_num, col_name in enumerate(df.columns): ws.write(1, col_num, col_name, fmt["header"])
     return buffer.getvalue()
 
-def exportar_feedback_pdf(codigo_carrera: str = None, usuario_actual: str = "ADMIN---UNPHU", periodo: str = None):
+def exportar_feedback_pdf(codigo_carrera: str = None, usuario_actual: str = "ADMIN---UNPHU", codigo_escuela: str = None):
     feedback = get_detalle_feedback(codigo_carrera)
     buffer = BytesIO()
     doc, story, styles = _get_pdf_base(
@@ -454,7 +446,7 @@ def exportar_feedback_pdf(codigo_carrera: str = None, usuario_actual: str = "ADM
         "Detalle de Feedback Estudiantil", 
         f"Carrera: {codigo_carrera if codigo_carrera else 'Todas'}", 
         usuario_actual,
-        "ACAD---FDB---RPT"
+        codigo_escuela if codigo_escuela else "ACAD---FDB---RPT"
     )
 
     story.append(Paragraph("<b>Comentarios y Evaluaciones Recibidas</b>", styles["Normal"]))
@@ -499,13 +491,12 @@ def exportar_materia_detalle_excel(codigo_materia: str, periodo: str):
         wb = writer.book
         fmt = _get_excel_formats(wb)
         if not data:
-            ws = wb.add_worksheet("Detalle Materia"); ws.write("A1", "No hay datos para este periodo"); return buffer.getvalue()
+            ws = wb.add_worksheet("Detalle Materia"); ws.write("A1", "No hay datos"); return buffer.getvalue()
         
         df = pd.DataFrame(data)
         nombre_materia = df["nombre_materia"].iloc[0] if not df.empty else codigo_materia
         
-        # Reordenar y renombrar columnas
-        df = df[["id_seccion", "nombre_profesor", "total_estudiantes", "promedio", "porcentaje_aprobacion", "estado"]]
+        df = df[["id_seccion_display", "nombre_profesor", "total_estudiantes", "promedio", "porcentaje_aprobacion", "estado"]]
         df.columns = ["Sección", "Profesor", "Estudiantes", "Promedio", "% Aprobación", "Estado"]
         
         df.to_excel(writer, sheet_name="Detalle Materia", index=False, startrow=1)
@@ -520,7 +511,7 @@ def exportar_materia_detalle_excel(codigo_materia: str, periodo: str):
             
     return buffer.getvalue()
 
-def exportar_materia_detalle_pdf(codigo_materia: str, periodo: str, usuario_actual: str = "ADMIN---UNPHU"):
+def exportar_materia_detalle_pdf(codigo_materia: str, periodo: str, usuario_actual: str = "ADMIN---UNPHU", codigo_escuela: str = None):
     data = get_detalle_materia_secciones(codigo_materia, periodo)
     buffer = BytesIO()
     nombre_materia = data[0]["nombre_materia"] if data else codigo_materia
@@ -530,16 +521,15 @@ def exportar_materia_detalle_pdf(codigo_materia: str, periodo: str, usuario_actu
         f"Análisis Detallado de Asignatura", 
         f"Materia: {nombre_materia} ({codigo_materia}) | Periodo: {periodo}", 
         usuario_actual,
-        "ACAD---MAT---RPT"
+        codigo_escuela if codigo_escuela else "ACAD---MAT---RPT"
     )
 
     story.append(Paragraph(f"<b>Desglose por Secciones</b>", styles["Normal"]))
     story.append(Spacer(1, 0.1*inch))
 
     if not data:
-        story.append(Paragraph("No hay información disponible para esta materia en el periodo seleccionado.", styles["Normal"]))
+        story.append(Paragraph("No hay información disponible para esta materia.", styles["Normal"]))
     else:
-        # Encabezados: Sección, Profesor, Cant. Estudiantes, Prom., % Aprob., Estado
         header = [["Sección", "Profesor", "Cant. Estudiantes", "Prom.", "% Aprob.", "Estado"]]
         rows = []
         for d in data:
@@ -561,7 +551,6 @@ def exportar_materia_detalle_pdf(codigo_materia: str, periodo: str, usuario_actu
             ('FONTSIZE', (0, 0), (-1, -1), 9),
         ]))
         
-        # Aplicar colores condicionales a la columna "Estado"
         for i, d in enumerate(data):
             color = colors.red if d["estado"] == "Crítico" else colors.green
             t.setStyle(TableStyle([
@@ -571,31 +560,7 @@ def exportar_materia_detalle_pdf(codigo_materia: str, periodo: str, usuario_actu
             
         story.append(t)
     
-        # --- NUEVA LÓGICA: Calcular resumen directamente de 'data' para evitar discrepancias ---
-        total_secciones = len(data)
-        secciones_criticas = sum(1 for d in data if d["estado"] == "Crítico")
-        promedio_general = sum(d["promedio"] for d in data) / total_secciones if total_secciones > 0 else 0
-        
-        # El índice de aprobación promedio de las secciones
-        aprobacion_promedio = sum(d["porcentaje_aprobacion"] for d in data) / total_secciones if total_secciones > 0 else 0
-
-        story.append(Spacer(1, 0.5 * inch))
-        story.append(Paragraph("<b>Resumen académico del Periodo</b>", styles["Normal"]))
-        story.append(Spacer(1, 0.1 * inch))
-
-        resumen_data = [
-            ["Total de secciones analizadas", str(total_secciones)],
-            ["Secciones en estado crítico", str(secciones_criticas)],
-            ["Promedio general de las secciones", f"{promedio_general:.2f}"],
-            ["Índice de aprobación de las secciones", f"{aprobacion_promedio:.2f}%"],
-        ]
-
-        resumen_tab = Table(resumen_data, colWidths=[3 * inch, 1.5 * inch], hAlign='LEFT')
-        resumen_tab.setStyle(TableStyle([
-            ('FONTSIZE', (0, 0), (-1, -1), 10),
-            ('ALIGN', (1, 0), (1, -1), 'LEFT'),
-        ]))
-        story.append(resumen_tab)
+        _add_academic_summary(story, styles, periodo, codigo_materia=codigo_materia)
     
     doc.build(story)
     return buffer.getvalue()

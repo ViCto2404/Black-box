@@ -46,67 +46,98 @@ RESPONSES_METADATA = {
 }
 
 @router.get("/resumen/{periodo}", responses=RESPONSES_METADATA)
-def reporte_resumen(periodo: str, format: Literal["excel", "pdf"] = Query("excel")):
+def reporte_resumen(
+    periodo: str, 
+    format: Literal["excel", "pdf"] = Query("excel"),
+    usuario_actual: Optional[str] = Query(None),
+    codigo_escuela: Optional[str] = Query(None)
+):
     try:
         if format == "excel":
             contenido = exportacion.exportar_resumen_periodo_excel(periodo)
         else:
-            contenido = exportacion.exportar_resumen_periodo_pdf(periodo)
+            contenido = exportacion.exportar_resumen_periodo_pdf(periodo, usuario_actual, codigo_escuela)
         return generar_respuesta(contenido, "resumen_academico", format, periodo)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/rendimiento/{periodo}", responses=RESPONSES_METADATA)
-def reporte_rendimiento(periodo: str, format: Literal["excel", "pdf"] = Query("excel")):
+def reporte_rendimiento(
+    periodo: str, 
+    format: Literal["excel", "pdf"] = Query("excel"),
+    usuario_actual: Optional[str] = Query(None),
+    codigo_escuela: Optional[str] = Query(None)
+):
     try:
         if format == "excel":
             contenido = exportacion.exportar_rendimiento_excel(periodo)
         else:
-            contenido = exportacion.exportar_rendimiento_pdf(periodo)
+            contenido = exportacion.exportar_rendimiento_pdf(periodo, usuario_actual, codigo_escuela)
         return generar_respuesta(contenido, "rendimiento_asignaturas", format, periodo)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/criticas/{periodo}", responses=RESPONSES_METADATA)
-def reporte_criticas(periodo: str, format: Literal["excel", "pdf"] = Query("excel")):
+def reporte_criticas(
+    periodo: str, 
+    format: Literal["excel", "pdf"] = Query("excel"),
+    usuario_actual: Optional[str] = Query(None),
+    codigo_escuela: Optional[str] = Query(None)
+):
     try:
         if format == "excel":
             contenido = exportacion.exportar_materias_criticas_excel(periodo)
         else:
-            contenido = exportacion.exportar_materias_criticas_pdf(periodo)
+            contenido = exportacion.exportar_materias_criticas_pdf(periodo, usuario_actual, codigo_escuela)
         return generar_respuesta(contenido, "materias_criticas", format, periodo)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/masa/{periodo}", responses=RESPONSES_METADATA)
-def reporte_masa(periodo: str, format: Literal["excel", "pdf"] = Query("excel")):
+def reporte_masa(
+    periodo: str, 
+    format: Literal["excel", "pdf"] = Query("excel"),
+    usuario_actual: Optional[str] = Query(None),
+    codigo_escuela: Optional[str] = Query(None)
+):
     try:
         if format == "excel":
             contenido = exportacion.exportar_masa_estudiantil_excel(periodo)
         else:
-            contenido = exportacion.exportar_masa_estudiantil_pdf(periodo)
+            contenido = exportacion.exportar_masa_estudiantil_pdf(periodo, usuario_actual, codigo_escuela)
         return generar_respuesta(contenido, "masa_estudiantil", format, periodo)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/materia/{codigo_materia}/{periodo}", responses=RESPONSES_METADATA)
-def reporte_materia_detalle(codigo_materia: str, periodo: str, format: Literal["excel", "pdf"] = Query("excel")):
+def reporte_materia_detalle(
+    codigo_materia: str, 
+    periodo: str, 
+    format: Literal["excel", "pdf"] = Query("excel"),
+    usuario_actual: Optional[str] = Query(None),
+    codigo_escuela: Optional[str] = Query(None)
+):
     try:
         if format == "excel":
             contenido = exportacion.exportar_materia_detalle_excel(codigo_materia, periodo)
         else:
-            contenido = exportacion.exportar_materia_detalle_pdf(codigo_materia, periodo)
+            contenido = exportacion.exportar_materia_detalle_pdf(codigo_materia, periodo, usuario_actual, codigo_escuela)
         return generar_respuesta(contenido, f"detalle_materia_{codigo_materia}", format, periodo)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/feedback", responses=RESPONSES_METADATA)
-def reporte_feedback(codigo_carrera: Optional[str] = Query(None), format: Literal["excel", "pdf"] = Query("excel")):
+def reporte_feedback(
+    codigo_carrera: Optional[str] = Query(None), 
+    format: Literal["excel", "pdf"] = Query("excel"),
+    usuario_actual: Optional[str] = Query(None),
+    codigo_escuela: Optional[str] = Query(None)
+):
     try:
         if format == "excel":
             contenido = exportacion.exportar_feedback_excel(codigo_carrera)
         else:
-            contenido = exportacion.exportar_feedback_pdf(codigo_carrera)
+            contenido = exportacion.exportar_feedback_pdf(codigo_carrera, usuario_actual, codigo_escuela)
         return generar_respuesta(contenido, "feedback_estudiantil", format, codigo_carrera)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
