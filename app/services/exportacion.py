@@ -374,7 +374,10 @@ def exportar_masa_estudiantil_excel(periodo: str):
         if not masa:
             ws = wb.add_worksheet("Masa Estudiantil"); ws.write("A1", "No hay datos"); return buffer.getvalue()
         df = pd.DataFrame(masa)
+        # Ajustamos columnas según lo que devuelve get_masa_estudiantil
+        df = df[["codigo_carrera", "nombre_carrera", "total_activos", "total_inactivos", "total_general"]]
         df.columns = ["Código carrera", "Carrera", "Activos", "Inactivos", "Total"]
+        
         df.to_excel(writer, sheet_name="Masa Estudiantil", index=False, startrow=1)
         ws = writer.sheets["Masa Estudiantil"]
         ws.set_column("A:A", 15); ws.set_column("B:B", 40); ws.set_column("C:E", 15)
@@ -401,7 +404,12 @@ def exportar_masa_estudiantil_pdf(periodo: str, usuario_actual: str = "ADMIN---U
     else:
         data = [["Carrera", "Activos", "Inactivos", "Total"]]
         for m in masa:
-            data.append([m["nombre_carrera"][:40], str(m["activos"]), str(m["inactivos"]), str(m["total"])])
+            data.append([
+                m["nombre_carrera"][:40], 
+                str(m["total_activos"]), 
+                str(m["total_inactivos"]), 
+                str(m["total_general"])
+            ])
         t = Table(data, colWidths=[3.5*inch, 1*inch, 1*inch, 1*inch], hAlign='CENTER')
         t.setStyle(TableStyle([
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
