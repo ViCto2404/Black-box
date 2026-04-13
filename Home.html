@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BlackBox - Home</title>
+    <link rel="icon" type="image/x-icon" href="https://unphu.edu.do/favicon.ico">
     <link rel="stylesheet" href="CSS/global.css">
     <link rel="stylesheet" href="CSS/Home.css">
     <link rel="stylesheet" href="CSS/navbar.css"> 
@@ -69,13 +70,21 @@
             <h1>Analítica Académica</h1>
         </div>
         <div class="filtros-container">
-            <label for="filtroPeriodo">Período Académico</label>
-            <div class="select-wrapper">
-                <select id="filtroPeriodo" onchange="actualizarDashboard()">
-                    <option value="01-2025">2025-1 (Más reciente)</option>
-                    <option value="03-2024">2024-3</option>
-                    <option value="02-2024">2024-2</option>
-                </select>
+            <div class="filter-group">
+                <label for="filtroAnio">Año</label>
+                <div class="select-wrapper">
+                    <select id="filtroAnio" onchange="actualizarDashboard()">
+                        <!-- Dinámico -->
+                    </select>
+                </div>
+            </div>
+            <div class="filter-group">
+                <label for="filtroPeriodoCuatri">Periodo</label>
+                <div class="select-wrapper">
+                    <select id="filtroPeriodoCuatri" onchange="actualizarDashboard()">
+                        <!-- Dinámico -->
+                    </select>
+                </div>
             </div>
         </div>
     </div>

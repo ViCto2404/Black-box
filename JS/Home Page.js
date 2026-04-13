@@ -3,8 +3,22 @@ Chart.register(ChartDataLabels);
 
 let chartMasa, chartRendimiento;
 
+// Determinar la URL de la API de forma dinámica
+let BASE_API = (typeof API_URL !== 'undefined') ? API_URL : "https://black-box-bryr.onrender.com";
+
+// Si estamos en localhost, usar preferiblemente el backend local
+if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+    BASE_API = "http://127.0.0.1:8000";
+}
+
 async function actualizarDashboard() {
-    const periodo = document.getElementById("filtroPeriodo").value;
+    const anio = document.getElementById("filtroAnio")?.value;
+    const cuatri = document.getElementById("filtroPeriodoCuatri")?.value;
+    
+    // Si los selectores no están listos o no tienen valor, no continuar
+    if (!anio || !cuatri) return;
+
+    const periodo = `${cuatri}-${anio}`;
     const carreraSeleccionada = document.getElementById("filtroCarreraRendimiento").value;
 
     // Obtener datos de sesión
@@ -29,7 +43,7 @@ async function actualizarDashboard() {
     }
 
     // 1. Cargar Resumen (KPIs)
-    let urlResumen = `${API_URL}/dashboard/resumen/${periodo}${params}`;
+    let urlResumen = `${BASE_API}/dashboard/resumen/${periodo}${params}`;
     if (carreraSeleccionada) {
         urlResumen += (urlResumen.includes("?") ? "&" : "?") + `codigo_carrera=${carreraSeleccionada}`;
     }
@@ -47,7 +61,7 @@ async function actualizarDashboard() {
     // 2. Gráfico de Masa Estudiantil (Solo se carga si NO hay una carrera específica seleccionada o al inicio)
     // El gráfico de masa es por carrera, si filtramos por una, el pastel no tiene sentido.
     // Pero para evitar que desaparezca, lo cargamos siempre con el filtro de escuela.
-    const urlMasa = `${API_URL}/dashboard/masa-estudiantil${params}`;
+    const urlMasa = `${BASE_API}/dashboard/masa-estudiantil${params}`;
     fetch(urlMasa)
         .then(res => res.json())
         .then(data => {
@@ -60,7 +74,7 @@ async function actualizarDashboard() {
         .catch(err => console.error("Error en masa estudiantil:", err));
 
     // 3. Gráfico de Rendimiento (TOP 5 PEOR RENDIMIENTO)
-    fetch(`${API_URL}/dashboard/rendimiento/${periodo}${params_rendimiento}`)
+    fetch(`${BASE_API}/dashboard/rendimiento/${periodo}${params_rendimiento}`)
         .then(res => res.json())
         .then(data => {
             if (data && data.length > 0) {
@@ -80,6 +94,61 @@ async function actualizarDashboard() {
         .catch(err => console.error("Error en rendimiento:", err));
 }
 
+// Cargar periodos desde la base de datos
+async function cargarPeriodosFiltro() {
+    const selAnio = document.getElementById("filtroAnio");
+    const selCuatri = document.getElementById("filtroPeriodoCuatri");
+    if (!selAnio || !selCuatri) return;
+
+    // Mostrar estado de carga visual
+    selAnio.innerHTML = "<option>...</option>";
+    selCuatri.innerHTML = "<option>Cargando datos...</option>";
+
+    try {
+        console.log("Pidiendo periodos reales a:", `${BASE_API}/dashboard/periodos`);
+        const res = await fetch(`${BASE_API}/dashboard/periodos`);
+        
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const periodosDisponibles = await res.json();
+        console.log("Periodos recibidos de la BD:", periodosDisponibles);
+
+        if (!periodosDisponibles || periodosDisponibles.length === 0) {
+            selAnio.innerHTML = "<option value=''>N/A</option>";
+            selCuatri.innerHTML = "<option value=''>Sin datos</option>";
+            return;
+        }
+
+        // Limpiar para llenar con datos reales
+        selAnio.innerHTML = "";
+        selCuatri.innerHTML = "";
+
+        const anios = [...new Set(periodosDisponibles.map(p => p.split("-")[1]))].sort((a, b) => b - a);
+        const cuatris = [...new Set(periodosDisponibles.map(p => p.split("-")[0]))].sort((a, b) => b - a);
+
+        anios.forEach(a => {
+            const opt = document.createElement("option");
+            opt.value = a; opt.textContent = a;
+            selAnio.appendChild(opt);
+        });
+
+        cuatris.forEach(c => {
+            const opt = document.createElement("option");
+            opt.value = c; opt.textContent = `Periodo ${parseInt(c)}`;
+            selCuatri.appendChild(opt);
+        });
+
+        const masReciente = periodosDisponibles[0].split("-");
+        selAnio.value = masReciente[1];
+        selCuatri.value = masReciente[0];
+
+    } catch (err) {
+        console.error("Error cargando periodos:", err);
+        selAnio.innerHTML = "<option value=''>Error</option>";
+        selCuatri.innerHTML = "<option value=''>Ver Consola (F12)</option>";
+    }
+}
+
 // Cargar carreras disponibles en el selector
 async function cargarCarrerasFiltro() {
     const selector = document.getElementById("filtroCarreraRendimiento");
@@ -88,7 +157,7 @@ async function cargarCarrerasFiltro() {
     const userRole = (localStorage.getItem("userRole") || "").toLowerCase().trim();
     const codigoEscuela = localStorage.getItem("codigoEscuela");
 
-    let url = `${API_URL}/carreras/`;
+    let url = `${BASE_API}/carreras/`;
     if (userRole === "director" && codigoEscuela) {
         url += `?codigo_escuela=${codigoEscuela}`;
     }
@@ -209,8 +278,9 @@ function dibujarChartRendimiento(labels, data) {
 }
 
 // Inicialización Única
-document.addEventListener("DOMContentLoaded", () => {
-    cargarCarrerasFiltro();
+document.addEventListener("DOMContentLoaded", async () => {
+    await cargarPeriodosFiltro();
+    await cargarCarrerasFiltro();
     aplicarRestriccionesDirector();
     actualizarDashboard();
 });

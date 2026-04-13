@@ -10,7 +10,8 @@ document.addEventListener("DOMContentLoaded", function() {
             e.preventDefault();
 
             // 1. Obtener valores del formulario
-            const tipo = document.getElementById("tipo").value;
+            const radioTipo = document.querySelector('input[name="queja_sugerencia"]:checked');
+            const tipoValue = radioTipo ? radioTipo.value : "";
             
             // Obtener múltiples categorías seleccionadas
             const selectCategoria = document.getElementById("categoria");
@@ -20,12 +21,12 @@ document.addEventListener("DOMContentLoaded", function() {
             const esAnonimo = document.getElementById("anonimo").checked;
 
             // 2. Preparar el payload según FeedbackCreate
-            // El backend espera: id_estudiante, aspectos_evaluar, comentario, es_anonimo
             const payload = {
                 id_estudiante: esAnonimo ? null : localStorage.getItem("id_unphu"),
-                aspectos_evaluar: `${tipo.toUpperCase()}: ${categoriasSeleccionadas}`,
+                aspectos_evaluar: categoriasSeleccionadas,
                 comentario: descripcion,
-                es_anonimo: esAnonimo
+                es_anonimo: esAnonimo,
+                "queja/sugerencia": tipoValue
             };
 
             console.log("Enviando feedback:", payload);

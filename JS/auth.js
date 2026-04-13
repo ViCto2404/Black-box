@@ -32,24 +32,39 @@ function redireccionarSegunRol(rol, estado, escuela) {
 
 /**
  * VERIFICAR SESIÓN ACTIVA
- * Si el usuario ya está logueado y trata de entrar al login, lo mandamos a su sitio.
+ * 1. Si el usuario ya está logueado y trata de entrar al login, lo mandamos a su sitio.
+ * 2. Si el usuario NO está logueado y trata de entrar a una página protegida, al login.
  */
-function verificarSesionActiva() {
+function verificarSesion() {
     const token = localStorage.getItem("token");
-    const currentPath = window.location.pathname;
+    const path = window.location.pathname;
+    
+    // Definir páginas públicas
+    const isLoginPage = path.endsWith("index.html") || path === "/" || path.endsWith("/");
+    const isRegisterPage = path.endsWith("creacion_usuario_admind.html");
+    const isChangePasswordPage = path.endsWith("cambiar_password.html");
 
-    if (token && (currentPath.endsWith("index.html") || currentPath === "/" || currentPath.endsWith("/"))) {
-        const rol = localStorage.getItem("userRole");
-        const estado = localStorage.getItem("userStatus");
-        const escuela = localStorage.getItem("codigoEscuela");
-        
-        console.log("Sesión detectada, redirigiendo...");
-        redireccionarSegunRol(rol, estado, escuela);
+    if (token) {
+        // Si tiene sesión y está en el login, redirigir al Home o su sitio correspondiente
+        if (isLoginPage) {
+            const rol = localStorage.getItem("userRole");
+            const estado = localStorage.getItem("userStatus");
+            const escuela = localStorage.getItem("codigoEscuela");
+            
+            console.log("Sesión detectada, redirigiendo...");
+            redireccionarSegunRol(rol, estado, escuela);
+        }
+    } else {
+        // Si NO tiene sesión y NO está en una página pública, mandar al login
+        if (!isLoginPage && !isRegisterPage && !isChangePasswordPage) {
+            console.warn("Acceso denegado: Sin sesión activa. Redirigiendo al login...");
+            window.location.href = "index.html";
+        }
     }
 }
 
 // Ejecutar verificación de inmediato
-verificarSesionActiva();
+verificarSesion();
 
 const loginForm = document.getElementById("loginForm");
 

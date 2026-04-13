@@ -3,6 +3,10 @@ from app.services import analisis
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
+@router.get("/periodos")
+def get_periodos():
+    return analisis.get_periodos()
+
 @router.get("/resumen/{periodo}")
 def resumen_periodo(
     periodo:str,

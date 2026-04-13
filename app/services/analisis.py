@@ -7,6 +7,22 @@ def _ejecutar_query(query):
         return resultado.data
     return resultado
 
+def get_periodos():
+    """
+    Obtiene todos los periodos académicos únicos de la tabla de calificaciones.
+    """
+    try:
+        query = supabase.table("calificacion").select("periodo_academico").execute()
+        if not query.data:
+            return []
+        
+        # Extraer valores únicos
+        periodos = sorted(list(set(item["periodo_academico"] for item in query.data)), reverse=True)
+        return periodos
+    except Exception as e:
+        print(f"Error obteniendo periodos: {str(e)}")
+        return []
+
 def get_rendimiento_por_materia(periodo:str, codigo_escuela: str= None, codigo_carrera: str = None):
     query = supabase.table("calificacion") \
         .select("nota, codigo_materia, id_estudiante, materia!inner(" \
@@ -195,7 +211,7 @@ def get_masa_estudiantil(codigo_carrera: str = None, escuela: str = None):
     return resumen.to_dict(orient="records")
 
 def get_detalle_feedback(codigo_carrera: str = None):
-    query = supabase.table("feedback").select("fecha_envio, aspectos_evaluar, es_anonimo, comentario, id_estudiante").order("fecha_envio", desc=True)
+    query = supabase.table("feedback").select('fecha_envio, aspectos_evaluar, es_anonimo, comentario, id_estudiante, "queja/sugerencia"').order("fecha_envio", desc=True)
     data = _ejecutar_query(query)
     if not data:
         return []
@@ -213,4 +229,4 @@ def get_detalle_feedback(codigo_carrera: str = None):
         df = df[df["codigo_carrera"] == codigo_carrera]
         
     df["es_anonimo_str"] = df["es_anonimo"].apply(lambda x: "Sí" if x else "No")
-    return df[["fecha_envio", "codigo_carrera", "aspectos_evaluar", "es_anonimo_str", "comentario"]].to_dict(orient="records")
+    return df[["fecha_envio", "codigo_carrera", "aspectos_evaluar", "es_anonimo_str", "comentario", "queja/sugerencia", "id_estudiante"]].to_dict(orient="records")

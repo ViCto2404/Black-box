@@ -38,39 +38,38 @@ function aplicarPermisosDeMenu() {
     const containers = sidebarMenu.querySelectorAll(".dropdown-container");
 
     if (rol === "estudiante") {
+        // Ocultar todo menos el apartado de Estudiantes
         dropdownBtns.forEach(btn => {
             if (!btn.innerText.includes("Estudiantes")) {
                 btn.style.display = "none";
             }
         });
         
+        // El contenido de estudiantes se deja que el toggle lo maneje,
+        // pero ocultamos otros contenedores por si acaso
         containers.forEach(cont => {
-            if (cont.innerHTML.includes("formulario_feedback.html")) {
-                cont.style.display = "block"; 
-            } else {
+            if (!cont.innerHTML.includes("formulario_feedback.html")) {
                 cont.style.display = "none";
             }
         });
     } 
     else if (rol === "admin" || rol === "administrador") {
-        const links = sidebarMenu.querySelectorAll("a");
-        links.forEach(a => {
-            if (a.getAttribute("href") === "formulario_feedback.html") {
-                a.style.display = "none";
-            }
-        });
-        
-        // Asegurar que el apartado de Usuarios sea visible para Admin
+        // Admin no necesita ver el apartado de "Estudiantes" (formulario feedback)
         dropdownBtns.forEach(btn => {
+            if (btn.innerText.includes("Estudiantes")) {
+                btn.style.display = "none";
+                if (btn.nextElementSibling) btn.nextElementSibling.style.display = "none";
+            }
             if (btn.innerText.includes("Usuarios")) {
                 btn.style.display = "block";
             }
         });
     }
     else {
-        // Para cualquier otro rol (ej. director), ocultamos el apartado de Usuarios si existiera
+        // Otros roles (Director) - Ya se oculta el menu-btn arriba, 
+        // pero por seguridad ocultamos también secciones sensibles.
         dropdownBtns.forEach(btn => {
-            if (btn.innerText.includes("Usuarios")) {
+            if (btn.innerText.includes("Usuarios") || btn.innerText.includes("Estudiantes")) {
                 btn.style.display = "none";
                 if (btn.nextElementSibling) btn.nextElementSibling.style.display = "none";
             }
@@ -82,6 +81,11 @@ function aplicarPermisosDeMenu() {
 function actualizarInterfazAuth() {
     const nombre = localStorage.getItem("userName");
     const authSection = document.getElementById("nav-auth-section");
+    const logoLink = document.querySelector(".navbar .logo");
+
+    if (logoLink) {
+        logoLink.href = nombre ? "Home.html" : "index.html";
+    }
 
     if (nombre && authSection) {
         authSection.innerHTML = `

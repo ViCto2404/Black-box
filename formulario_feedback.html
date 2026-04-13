@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UNPHU - Feedback</title>
+    <link rel="icon" type="image/x-icon" href="https://unphu.edu.do/favicon.ico">
     <link rel="stylesheet" href="CSS/global.css">
     <link rel="stylesheet" href="CSS/Styles.css">
     <link rel="stylesheet" href="CSS/navbar.css">
@@ -63,11 +64,15 @@
 
         <form id="feedbackForm">
             <div class="form-group">
-                <label for="tipo">Tipo de Entrada:</label>
-                <select name="tipo" id="tipo" required>
-                    <option value="queja">Queja</option>
-                    <option value="sugerencia">Sugerencia</option>
-                </select>
+                <label>Tipo de Entrada:</label>
+                <div class="radio-group" style="display: flex; gap: 20px; margin-top: 10px;">
+                    <label style="font-weight: normal; cursor: pointer;">
+                        <input type="radio" name="queja_sugerencia" value="queja" required style="width: auto; margin-right: 5px;"> Queja
+                    </label>
+                    <label style="font-weight: normal; cursor: pointer;">
+                        <input type="radio" name="queja_sugerencia" value="sugerencia" required style="width: auto; margin-right: 5px;"> Sugerencia
+                    </label>
+                </div>
             </div>
 
             <div class="form-group">

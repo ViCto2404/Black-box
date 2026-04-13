@@ -3,7 +3,7 @@ from app.database.supabase_client import supabase
 
 def get_feedback(es_anonimo: bool = None, codigo_carrera: str = None):
     data = supabase.table("feedback")\
-            .select("id_feedback, id_estudiante, aspectos_evaluar, comentario, es_anonimo, fecha_envio")\
+            .select('id_feedback, id_estudiante, aspectos_evaluar, comentario, es_anonimo, fecha_envio, "queja/sugerencia"')\
             .order("fecha_envio", desc=True)\
             .execute()
     
@@ -84,7 +84,7 @@ def eliminar_feedback(id_feedback: int):
     
 def get_resumen_feedback():
     data = supabase.table("feedback") \
-        .select("aspectos_evaluar, es_anonimo") \
+        .select('aspectos_evaluar, es_anonimo, "queja/sugerencia"') \
         .execute()
 
     if not data.data:
