@@ -39,17 +39,14 @@ def get_periodos():
         return []
 
 def get_rendimiento_por_materia(periodo:str, codigo_escuela: str= None, codigo_carrera: str = None):
-    query = supabase.table("calificacion") \
-        .select("nota, codigo_materia, id_estudiante, materia!inner(" \
-        "codigo, " \
-        "nombre, " \
-        "estado, " \
-        "codigo_carrera, " \
-        "carreras!inner(codigo_escuela))") \
-        .eq("periodo_academico", periodo)
+    # Usamos joins normales (LEFT joins implícitos) en lugar de !inner
+    # Esto evita que si una materia no tiene carrera asignada, se pierda el registro del dashboard
+    select_fields = "nota, codigo_materia, id_estudiante, materia(codigo, nombre, estado, codigo_carrera, carreras(codigo_escuela))"
+    
+    query = supabase.table("calificacion").select(select_fields).eq("periodo_academico", periodo)
     
     if codigo_escuela:
-        query = query.eq("materia.carreras.codigo_escuela", codigo_escuela)
+        query = query.eq("materia.carreras.codigo_escuela", escuela)
     
     if codigo_carrera:
         query = query.eq("materia.codigo_carrera", codigo_carrera)

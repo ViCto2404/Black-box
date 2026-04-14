@@ -256,8 +256,13 @@ function dibujarChartRendimiento(labels, data) {
 
 // Inicialización Única
 document.addEventListener("DOMContentLoaded", async () => {
+    // 1. Cargar periodos primero y esperar a que termine
     await cargarPeriodosFiltro();
+    
+    // 2. Luego cargar el resto
     await cargarCarrerasFiltro();
     aplicarRestriccionesDirector();
+    
+    // 3. Finalmente actualizar el dashboard con el periodo ya seleccionado
     actualizarDashboard();
 });
