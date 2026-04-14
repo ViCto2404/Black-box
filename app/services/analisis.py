@@ -201,32 +201,27 @@ def get_masa_estudiantil(codigo_carrera: str = None, escuela: str = None, period
             res_carreras = supabase.table("carreras").select("codigo").eq("codigo_escuela", escuela).execute()
             if res_carreras.data:
                 codigos_carreras_permitidos = [c["codigo"] for c in res_carreras.data]
-                print(f"DEBUG MASA: Carreras permitidas para escuela {escuela}: {codigos_carreras_permitidos}")
             else:
-                print(f"DEBUG MASA: No se encontraron carreras para la escuela {escuela}")
                 return []
         except Exception as e:
-            print(f"ERROR obteniendo carreras para escuela: {str(e)}")
             return []
 
-    # Ahora consultamos los estudiantes
+    # Consulta Estudiantes
     query = supabase.table("estudiantes").select("id_unphu, estado_activo, codigo_carrera, periodo_inscripcion, carreras(nombre)")
     
     if codigo_carrera:
         query = query.eq("codigo_carrera", codigo_carrera)
     
+    # Filtro por periodo de inscripción (formato 01-2025)
     if periodo:
         query = query.eq("periodo_inscripcion", periodo)
     
-    # Filtro manual por la lista de carreras de la escuela
     if escuela and codigos_carreras_permitidos:
         query = query.in_("codigo_carrera", codigos_carreras_permitidos)
 
     try:
         data = _ejecutar_query(query)
-        print(f"DEBUG MASA: Estudiantes encontrados tras filtro: {len(data) if data else 0}")
-    except Exception as e:
-        print(f"ERROR en get_masa_estudiantil: {str(e)}")
+    except:
         return []
 
     if not data:
@@ -235,10 +230,10 @@ def get_masa_estudiantil(codigo_carrera: str = None, escuela: str = None, period
     df = pd.DataFrame(data)
     df["nombre_carrera"] = df["carreras"].apply(lambda x: x["nombre"] if isinstance(x, dict) else "N/A")
 
-    # Agrupar y resumir
+    # Agrupar por carrera para el gráfico de pastel
     resumen = df.groupby(["codigo_carrera", "nombre_carrera"]).agg(
-        total_activos = ("estado_activo", lambda x: int((x=="Activo").sum())),
-        total_inactivos=("estado_activo", lambda x: int((x == "Inactivo").sum())),
+        total_activos = ("estado_activo", lambda x: int((x=="Activo" or x=="Activa").sum())),
+        total_inactivos=("estado_activo", lambda x: int((x == "Inactivo" or x=="Inactiva").sum())),
         total_general=("id_unphu", "count" )
     ).reset_index()
 

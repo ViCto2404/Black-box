@@ -58,7 +58,7 @@ async function actualizarDashboard() {
         })
         .catch(err => console.error("Error en resumen:", err));
 
-    // 2. Gráfico de Masa Estudiantil (Filtrado por escuela y periodo)
+    // 2. Gráfico de Masa Estudiantil
     const urlMasa = `${BASE_API}/dashboard/masa-estudiantil${params}${params ? '&' : '?'}periodo=${periodo}`;
     fetch(urlMasa)
         .then(res => res.json())
@@ -73,8 +73,9 @@ async function actualizarDashboard() {
         })
         .catch(err => console.error("Error en masa estudiantil:", err));
 
-    // 3. Gráfico de Rendimiento (TOP 5 PEOR RENDIMIENTO)
-    fetch(`${BASE_API}/dashboard/rendimiento/${periodo}${params_rendimiento}`)
+    // 3. Gráfico de Rendimiento
+    let urlRendimiento = `${BASE_API}/dashboard/rendimiento/${periodo}${params_rendimiento}`;
+    fetch(urlRendimiento)
         .then(res => res.json())
         .then(data => {
             if (data && data.length > 0) {
