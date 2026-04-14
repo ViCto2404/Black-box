@@ -89,23 +89,39 @@ async function actualizarDashboard() {
         els.forEach(c => c.style.opacity = '1');
     };
 
-    // 3. PARÁMETROS
-    const filteredParams = new URLSearchParams();
-    if (userRole === "director" && codigoEscuela && codigoEscuela !== "null") {
-        filteredParams.append("codigo_escuela", codigoEscuela);
-        filteredParams.append("escuela", codigoEscuela);
-    }
-    if (carreraSeleccionada) filteredParams.append("codigo_carrera", carreraSeleccionada);
+    const manejarErrorConexion = (err, containerId) => {
+        if (err.name === 'AbortError') return;
+        console.error(`[Error de Conexión]`, err);
+        restaurarOpacidad();
+        
+        const container = document.getElementById(containerId)?.closest('.card-chart') || document.querySelector('.card-container');
+        if (container) {
+            const existingMsg = container.querySelector('.no-data-msg');
+            if (existingMsg) existingMsg.remove();
+            
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'no-data-msg';
+            errorDiv.style = "text-align: center; color: #d9534f; padding: 20px; background: #f9f2f4; border-radius: 8px; margin: 10px;";
+            errorDiv.innerHTML = `
+                <p><b>⚠️ Error de Conexión</b></p>
+                <p style="font-size: 12px;">No se pudo establecer contacto con el servidor (Render).</p>
+                <p style="font-size: 11px; margin-top: 5px;">Asegúrese de que la API esté encendida o espere unos segundos a que se reactive.</p>
+            `;
+            container.appendChild(errorDiv);
+        }
+    };
 
-    const masaParams = new URLSearchParams();
-    if (userRole === "director" && codigoEscuela && codigoEscuela !== "null") masaParams.append("escuela", codigoEscuela);
-    masaParams.append("periodo", periodo);
+    // 3. PARÁMETROS
+    // ... rest of the code ...
 
     // 4. PETICIONES
     
     // KPIs
     fetch(`${BASE_API_DASH}/dashboard/resumen/${periodo}?${filteredParams.toString()}`, { headers, signal })
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error("Respuesta de red no válida");
+            return res.json();
+        })
         .then(data => {
             if (signal.aborted) return;
             document.getElementById("promedio").textContent = Number(data.promedio_general || 0).toFixed(2);
@@ -115,11 +131,14 @@ async function actualizarDashboard() {
             document.querySelectorAll('.card').forEach(c => c.style.opacity = '1');
             validarIntegridadVisual("kpis", data);
         })
-        .catch(err => { if (err.name !== 'AbortError') { console.error("Error KPIs:", err); restaurarOpacidad('.card'); } });
+        .catch(err => manejarErrorConexion(err, "promedio"));
 
     // Masa
     fetch(`${BASE_API_DASH}/dashboard/masa-estudiantil?${masaParams.toString()}`, { headers, signal })
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error("Respuesta de red no válida");
+            return res.json();
+        })
         .then(data => {
             if (signal.aborted) return;
             const cardMasa = document.getElementById('chartMasa')?.closest('.card-chart');
@@ -132,11 +151,14 @@ async function actualizarDashboard() {
             }
             validarIntegridadVisual("masa", data);
         })
-        .catch(err => { if (err.name !== 'AbortError') { console.error("Error Masa:", err); restaurarOpacidad('#chartMasa'); } });
+        .catch(err => manejarErrorConexion(err, "chartMasa"));
 
     // Rendimiento
     fetch(`${BASE_API_DASH}/dashboard/rendimiento/${periodo}?${filteredParams.toString()}`, { headers, signal })
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error("Respuesta de red no válida");
+            return res.json();
+        })
         .then(data => {
             if (signal.aborted) return;
             const cardRend = document.getElementById('chartRendimiento')?.closest('.card-chart');
@@ -159,7 +181,7 @@ async function actualizarDashboard() {
             }
             validarIntegridadVisual("rendimiento", data);
         })
-        .catch(err => { if (err.name !== 'AbortError') { console.error("Error Rendimiento:", err); restaurarOpacidad('#chartRendimiento'); } });
+        .catch(err => manejarErrorConexion(err, "chartRendimiento"));
 }
 
 // Cargar periodos desde la base de datos
