@@ -172,8 +172,15 @@ def get_resumen_periodo(periodo: str, escuela: str = None, codigo_carrera: str =
 
     # Calculamos sobre las notas reales encontradas
     total_secciones_con_notas = int(df["id_seccion"].nunique())
-    total_estudiantes = int(df["id_estudiante"].nunique())
-    
+    total_estudiantes_notas = int(df["id_estudiante"].nunique())
+
+    # Si no hay estudiantes en notas, intentamos traer el total de la masa estudiantil de ese periodo
+    if total_estudiantes_notas == 0:
+        masa = get_masa_estudiantil(codigo_carrera, escuela, periodo)
+        total_estudiantes_final = sum(m["total_general"] for m in masa)
+    else:
+        total_estudiantes_final = total_estudiantes_notas
+
     resumen_secciones = df.groupby("id_seccion").agg(
         total_estudiantes_seccion=("nota", "count"),
         reprobados=("nota", lambda x: (x < 70).sum())
@@ -189,7 +196,7 @@ def get_resumen_periodo(periodo: str, escuela: str = None, codigo_carrera: str =
         "secciones_criticas": secciones_criticas,
         "promedio_general": promedio_general,
         "indice_aprobacion": indice_aprobacion,
-        "total_estudiantes": total_estudiantes
+        "total_estudiantes": total_estudiantes_final
     }
 
 def get_masa_estudiantil(codigo_carrera: str = None, escuela: str = None, periodo: str = None):

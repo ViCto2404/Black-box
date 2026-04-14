@@ -4,11 +4,13 @@ Chart.register(ChartDataLabels);
 let chartMasa, chartRendimiento;
 
 // Determinar la URL de la API de forma dinámica
-let BASE_API = (typeof API_URL !== 'undefined') ? API_URL : "https://black-box-bryr.onrender.com";
+// Usamos la configurada en config.js como base
+let BASE_API_DASH = (typeof API_URL !== 'undefined') ? API_URL : "https://black-box-bryr.onrender.com";
 
-// Si estamos en localhost, usar preferiblemente el backend local
+// Solo forzar localhost si el navegador explícitamente está en localhost
 if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-    BASE_API = "http://127.0.0.1:8000";
+    // Si prefieres usar el backend local mientras desarrollas, descomenta la línea de abajo:
+    // BASE_API_DASH = "http://127.0.0.1:8000";
 }
 
 async function actualizarDashboard() {
@@ -23,6 +25,11 @@ async function actualizarDashboard() {
     const rawRole = localStorage.getItem("userRole") || "";
     const userRole = rawRole.toLowerCase().trim();
     const codigoEscuela = localStorage.getItem("codigoEscuela");
+    const token = localStorage.getItem("token");
+
+    const headers = {
+        'Authorization': `Bearer ${token}`
+    };
 
     console.log("DEBUG DASHBOARD: Rol:", userRole, "Escuela:", codigoEscuela, "Periodo:", periodo);
 
@@ -43,12 +50,12 @@ async function actualizarDashboard() {
     }
 
     // 1. Cargar Resumen (KPIs)
-    let urlResumen = `${BASE_API}/dashboard/resumen/${periodo}${params}`;
+    let urlResumen = `${BASE_API_DASH}/dashboard/resumen/${periodo}${params}`;
     if (carreraSeleccionada) {
         urlResumen += (urlResumen.includes("?") ? "&" : "?") + `codigo_carrera=${carreraSeleccionada}`;
     }
 
-    fetch(urlResumen)
+    fetch(urlResumen, { headers })
         .then(res => res.json())
         .then(data => {
             document.getElementById("promedio").textContent = Number(data.promedio_general || 0).toFixed(2);
@@ -59,8 +66,8 @@ async function actualizarDashboard() {
         .catch(err => console.error("Error en resumen:", err));
 
     // 2. Gráfico de Masa Estudiantil
-    const urlMasa = `${BASE_API}/dashboard/masa-estudiantil${params}${params ? '&' : '?'}periodo=${periodo}`;
-    fetch(urlMasa)
+    const urlMasa = `${BASE_API_DASH}/dashboard/masa-estudiantil${params}${params ? '&' : '?'}periodo=${periodo}`;
+    fetch(urlMasa, { headers })
         .then(res => res.json())
         .then(data => {
             if (data && data.length > 0) {
@@ -74,8 +81,8 @@ async function actualizarDashboard() {
         .catch(err => console.error("Error en masa estudiantil:", err));
 
     // 3. Gráfico de Rendimiento
-    let urlRendimiento = `${BASE_API}/dashboard/rendimiento/${periodo}${params_rendimiento}`;
-    fetch(urlRendimiento)
+    let urlRendimiento = `${BASE_API_DASH}/dashboard/rendimiento/${periodo}${params_rendimiento}`;
+    fetch(urlRendimiento, { headers })
         .then(res => res.json())
         .then(data => {
             if (data && data.length > 0) {
@@ -88,7 +95,6 @@ async function actualizarDashboard() {
                 const valores = top5Peores.map(i => i.promedio);
                 dibujarChartRendimiento(labels, valores);
             } else {
-                // Si no hay datos, limpiar gráfico para no mostrar basura
                 if (chartRendimiento) chartRendimiento.destroy();
             }
         })
@@ -101,7 +107,10 @@ async function cargarPeriodosFiltro() {
     if (!selPeriodo) return;
 
     try {
-        const res = await fetch(`${BASE_API}/dashboard/periodos`);
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${BASE_API_DASH}/dashboard/periodos`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const periodosDisponibles = await res.json();
@@ -136,17 +145,19 @@ async function cargarCarrerasFiltro() {
 
     const userRole = (localStorage.getItem("userRole") || "").toLowerCase().trim();
     const codigoEscuela = localStorage.getItem("codigoEscuela");
+    const token = localStorage.getItem("token");
 
-    let url = `${BASE_API}/carreras/`;
+    let url = `${BASE_API_DASH}/carreras/`;
     if (userRole === "director" && codigoEscuela) {
         url += `?codigo_escuela=${codigoEscuela}`;
     }
 
     try {
-        const res = await fetch(url);
+        const res = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
         const carreras = await res.json();
         
-        // Limpiar opciones previas (excepto la primera)
         selector.innerHTML = '<option value="">Todas las Carreras</option>';
         
         carreras.forEach(c => {
@@ -259,13 +270,8 @@ function dibujarChartRendimiento(labels, data) {
 
 // Inicialización Única
 document.addEventListener("DOMContentLoaded", async () => {
-    // 1. Cargar periodos primero y esperar a que termine
     await cargarPeriodosFiltro();
-    
-    // 2. Luego cargar el resto
     await cargarCarrerasFiltro();
     aplicarRestriccionesDirector();
-    
-    // 3. Finalmente actualizar el dashboard con el periodo ya seleccionado
     actualizarDashboard();
 });
