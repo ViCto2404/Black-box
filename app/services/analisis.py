@@ -100,17 +100,31 @@ def get_resumen_periodo(periodo: str, escuela: str = None, codigo_carrera: str =
     print(f"DEBUG: get_resumen_periodo - Periodo: {periodo}, Escuela: {escuela}, Carrera: {codigo_carrera}, Materia: {codigo_materia}")
     
     # 1. Obtener base de secciones para conteo de unidades analizadas
-    # Esto asegura que si hay secciones registradas pero sin notas, el dashboard muestre algo
-    q_sec = supabase.table("seccion").select("id", count="exact").eq("periodo", periodo)
-    if escuela:
-        q_sec = q_sec.eq("materia.carreras.codigo_escuela", escuela)
-    if codigo_carrera:
-        q_sec = q_sec.eq("materia.codigo_carrera", codigo_carrera)
-    if codigo_materia:
-        q_sec = q_sec.eq("materia", codigo_materia)
-    
-    res_sec = q_sec.execute()
-    total_secciones_planificadas = res_sec.count if hasattr(res_sec, "count") else 0
+    try:
+        # En lugar de un join complejo en el eq, primero obtenemos las materias de la escuela si hay filtro
+        materia_filter = None
+        if escuela:
+            res_mat = supabase.table("materia").select("codigo").eq("carreras.codigo_escuela", escuela).execute()
+            if res_mat.data:
+                materia_filter = [m["codigo"] for m in res_mat.data]
+
+        q_sec = supabase.table("seccion").select("id", count="exact").eq("periodo", periodo)
+        
+        if materia_filter:
+            q_sec = q_sec.in_("materia", materia_filter)
+        elif escuela: # Si hay escuela pero no encontramos materias (caso raro)
+            q_sec = q_sec.eq("id", -1) # No traer nada
+            
+        if codigo_carrera:
+            q_sec = q_sec.eq("materia", codigo_carrera) # En la tabla seccion la columna es 'materia'
+        if codigo_materia:
+            q_sec = q_sec.eq("materia", codigo_materia)
+        
+        res_sec = q_sec.execute()
+        total_secciones_planificadas = res_sec.count if hasattr(res_sec, "count") else 0
+    except Exception as e:
+        print(f"Error en conteo de secciones: {str(e)}")
+        total_secciones_planificadas = 0
 
     # 2. Consulta dinámica de calificaciones
     select_fields = "nota, id_seccion, id_estudiante"
