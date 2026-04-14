@@ -24,6 +24,8 @@ async function actualizarDashboard() {
     const userRole = rawRole.toLowerCase().trim();
     const codigoEscuela = localStorage.getItem("codigoEscuela");
 
+    console.log("DEBUG DASHBOARD: Rol:", userRole, "Escuela:", codigoEscuela, "Periodo:", periodo);
+
     let params = "";
     let params_rendimiento = "";
 
