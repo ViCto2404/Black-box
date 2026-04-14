@@ -3,10 +3,7 @@
  */
 
 // Determinar la URL de la API de forma dinámica
-let API_BASE_REPORTE = (typeof API_URL !== 'undefined') ? API_URL : "https://black-box-bryr.onrender.com";
-if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-    API_BASE_REPORTE = "http://127.0.0.1:8000";
-}
+const API_BASE_REPORTE = (typeof API_URL !== 'undefined') ? API_URL : "https://black-box-bryr.onrender.com";
 
 /**
  * Maneja el cambio en el selector principal de reportes

@@ -39,46 +39,62 @@ def get_periodos():
         return []
 
 def get_rendimiento_por_materia(periodo:str, codigo_escuela: str= None, codigo_carrera: str = None):
-    # Usamos joins normales (LEFT joins implícitos) en lugar de !inner
-    # Esto evita que si una materia no tiene carrera asignada, se pierda el registro del dashboard
-    select_fields = "nota, codigo_materia, id_estudiante, materia(codigo, nombre, estado, codigo_carrera, carreras(codigo_escuela))"
-    
-    query = supabase.table("calificacion").select(select_fields).eq("periodo_academico", periodo)
-    
-    if codigo_escuela:
-        query = query.eq("materia.carreras.codigo_escuela", codigo_escuela)
-    
-    if codigo_carrera:
-        query = query.eq("materia.codigo_carrera", codigo_carrera)
+    try:
+        # 1. Determinar si necesitamos filtrar por materias primero
+        necesita_filtro_materia = bool(codigo_escuela or codigo_carrera)
+        materias_validas = {}
+        
+        if necesita_filtro_materia:
+            select_materia = "codigo, nombre, estado, codigo_carrera"
+            if codigo_escuela:
+                select_materia += ", carreras!inner(codigo_escuela)"
+            materia_query = supabase.table("materia").select(select_materia)
+            if codigo_escuela:
+                materia_query = materia_query.eq("carreras.codigo_escuela", codigo_escuela)
+            if codigo_carrera:
+                materia_query = materia_query.eq("codigo_carrera", codigo_carrera)
+            res_mat = materia_query.execute()
+            if not res_mat.data: return []
+            materias_validas = {m["codigo"]: m for m in res_mat.data}
+            codigos_materias = list(materias_validas.keys())
 
-    data = _ejecutar_query(query)
+        # 2. Obtener calificaciones
+        query = supabase.table("calificacion").select("nota, codigo_materia, id_estudiante").eq("periodo_academico", periodo)
+        if necesita_filtro_materia:
+            query = query.in_("codigo_materia", codigos_materias)
+            
+        data = _ejecutar_query(query)
+        if not data: return []
+        
+        df = pd.DataFrame(data)
 
-    if not data:
+        # 3. Si no teníamos las materias (porque no hubo filtro), las traemos ahora solo para las que aparecen en las notas
+        if not necesita_filtro_materia:
+            codigos_en_notas = df["codigo_materia"].unique().tolist()
+            res_mat = supabase.table("materia").select("codigo, nombre, estado, codigo_carrera").in_("codigo", codigos_en_notas).execute()
+            materias_validas = {m["codigo"]: m for m in res_mat.data}
+        
+        # Mapear info de materia
+        df["nombre_materia"] = df["codigo_materia"].apply(lambda x: materias_validas[x]["nombre"] if x in materias_validas else "N/A")
+        df["codigo_carrera"] = df["codigo_materia"].apply(lambda x: materias_validas[x]["codigo_carrera"] if x in materias_validas else "N/A")
+        df["estado_materia"] = df["codigo_materia"].apply(lambda x: materias_validas[x]["estado"] if x in materias_validas else "Activa")
+        
+        resumen = df.groupby(["codigo_materia", "nombre_materia", "codigo_carrera", "estado_materia"]).agg(
+            total_estudiantes = ("nota", "count"),
+            promedio=("nota", "mean"),
+            aprobados=("nota", lambda x: (x>=70).sum()),
+            reprobados=("nota", lambda x: (x<70).sum())
+        ).reset_index()
+
+        resumen["porcentaje_aprobacion"] = round(resumen["aprobados"] / resumen["total_estudiantes"] * 100 , 2)
+        resumen["porcentaje_reprobacion"] = round(resumen["reprobados"] / resumen["total_estudiantes"] * 100 , 2)
+        resumen["promedio"] = resumen["promedio"].round(2)
+        resumen["periodo_academico"] = periodo
+
+        return resumen.to_dict(orient="records")
+    except Exception as e:
+        print(f"Error en get_rendimiento_por_materia: {str(e)}")
         return []
-    
-    df = pd.DataFrame(data)
-    df["nombre_materia"] = df["materia"].apply(lambda x: x["nombre"] if isinstance(x, dict) else None)
-    df["codigo_carrera"] = df["materia"].apply(lambda x: x["codigo_carrera"] if isinstance(x, dict) else None)
-    df["estado_materia"] = df["materia"].apply(lambda x: x["estado"] if isinstance(x, dict) else None)
-    
-    df = df.dropna(subset=["nombre_materia"])
-
-    if df.empty:
-        return []
-    
-    resumen = df.groupby(["codigo_materia", "nombre_materia", "codigo_carrera", "estado_materia"]).agg(
-        total_estudiantes = ("nota", "count"),
-        promedio=("nota", "mean"),
-        aprobados=("nota", lambda x: (x>=70).sum()),
-        reprobados=("nota", lambda x: (x<70).sum())
-    ).reset_index()
-
-    resumen["porcentaje_aprobacion"] = round(resumen["aprobados"] / resumen["total_estudiantes"] * 100 , 2)
-    resumen["porcentaje_reprobacion"] = round(resumen["reprobados"] / resumen["total_estudiantes"] * 100 , 2)
-    resumen["promedio"] = resumen["promedio"].round(2)
-    resumen["periodo_academico"] = periodo
-
-    return resumen.to_dict(orient="records")
 
 def get_materias_criticas(periodo: str, codigo_escuela: str= None, codigo_carrera: str = None, umbral: float = 30.0):
     rendimiento = get_rendimiento_por_materia(periodo, codigo_escuela, codigo_carrera)
@@ -97,154 +113,154 @@ def get_materias_criticas(periodo: str, codigo_escuela: str= None, codigo_carrer
     return df_criticas[columnas_solicitadas].sort_values("porcentaje_reprobacion", ascending=False).to_dict(orient="records")
 
 def get_resumen_periodo(periodo: str, escuela: str = None, codigo_carrera: str = None, codigo_materia: str = None):
-    print(f"DEBUG: get_resumen_periodo - Periodo: {periodo}, Escuela: {escuela}, Carrera: {codigo_carrera}, Materia: {codigo_materia}")
-    
-    # 1. Obtener base de secciones para conteo de unidades analizadas
     try:
-        # En lugar de un join complejo en el eq, primero obtenemos las materias de la escuela si hay filtro
-        materia_filter = None
-        if escuela:
-            res_mat = supabase.table("materia").select("codigo").eq("carreras.codigo_escuela", escuela).execute()
-            if res_mat.data:
-                materia_filter = [m["codigo"] for m in res_mat.data]
+        # 1. Obtener lista de materias si hay filtros
+        necesita_filtro = bool(escuela or codigo_carrera or codigo_materia)
+        codigos_materias = []
+        if necesita_filtro:
+            select_materia = "codigo"
+            if escuela: select_materia += ", carreras!inner(codigo_escuela)"
+            materia_query = supabase.table("materia").select(select_materia)
+            if escuela: materia_query = materia_query.eq("carreras.codigo_escuela", escuela)
+            if codigo_carrera: materia_query = materia_query.eq("codigo_carrera", codigo_carrera)
+            if codigo_materia: materia_query = materia_query.eq("codigo", codigo_materia)
+            res_mat = materia_query.execute()
+            if not res_mat.data: return {"total_secciones_analizadas": 0, "secciones_criticas": 0, "promedio_general": 0.0, "indice_aprobacion": 0.0, "total_estudiantes": 0}
+            codigos_materias = [m["codigo"] for m in res_mat.data]
 
+        # 2. Conteo de secciones y calificaciones
         q_sec = supabase.table("seccion").select("id", count="exact").eq("periodo", periodo)
+        q_cal = supabase.table("calificacion").select("nota, id_seccion, id_estudiante").eq("periodo_academico", periodo)
         
-        if materia_filter:
-            q_sec = q_sec.in_("materia", materia_filter)
-        elif escuela: # Si hay escuela pero no encontramos materias (caso raro)
-            q_sec = q_sec.eq("id", -1) # No traer nada
-            
-        if codigo_carrera:
-            q_sec = q_sec.eq("materia", codigo_carrera) # En la tabla seccion la columna es 'materia'
-        if codigo_materia:
-            q_sec = q_sec.eq("materia", codigo_materia)
+        if necesita_filtro:
+            q_sec = q_sec.in_("materia", codigos_materias)
+            q_cal = q_cal.in_("codigo_materia", codigos_materias)
         
         res_sec = q_sec.execute()
         total_secciones_planificadas = res_sec.count if hasattr(res_sec, "count") else 0
-    except Exception as e:
-        print(f"Error en conteo de secciones: {str(e)}")
-        total_secciones_planificadas = 0
-
-    # 2. Consulta dinámica de calificaciones
-    select_fields = "nota, id_seccion, id_estudiante"
-    
-    # Usamos joins normales (sin inner forzado) para no descartar registros si falla una relación
-    if escuela or codigo_carrera:
-        select_fields += ", materia(codigo_carrera, carreras(codigo_escuela))"
         
-    query = supabase.table("calificacion").select(select_fields).eq("periodo_academico", periodo)
-    
-    if escuela:
-        query = query.eq("materia.carreras.codigo_escuela", escuela)
-    if codigo_carrera:
-        query = query.eq("materia.codigo_carrera", codigo_carrera)
-    if codigo_materia:
-        query = query.eq("codigo_materia", codigo_materia)
+        data = _ejecutar_query(q_cal)
+        if not data: return {"total_secciones_analizadas": total_secciones_planificadas, "secciones_criticas": 0, "promedio_general": 0.0, "indice_aprobacion": 0.0, "total_estudiantes": 0}
+        
+        df = pd.DataFrame(data)
+        df["nota"] = pd.to_numeric(df["nota"], errors='coerce')
+        df = df.dropna(subset=["nota"])
 
-    try:
-        data = _ejecutar_query(query)
+        total_secciones_con_notas = int(df["id_seccion"].nunique())
+        total_estudiantes_notas = int(df["id_estudiante"].nunique())
+
+        resumen_secciones = df.groupby("id_seccion").agg(
+            total_estudiantes_seccion=("nota", "count"),
+            reprobados=("nota", lambda x: (x < 70).sum())
+        )
+        resumen_secciones["porcentaje_reprobacion"] = (resumen_secciones["reprobados"] / resumen_secciones["total_estudiantes_seccion"]) * 100
+        secciones_criticas = int((resumen_secciones["porcentaje_reprobacion"] > 30).sum())
+
+        return {
+            "total_secciones_analizadas": max(total_secciones_planificadas, total_secciones_con_notas),
+            "secciones_criticas": secciones_criticas,
+            "promedio_general": round(float(df["nota"].mean()), 2),
+            "indice_aprobacion": round(float((df["nota"] >= 70).sum() / len(df) * 100), 2),
+            "total_estudiantes": total_estudiantes_notas
+        }
     except Exception as e:
-        print(f"ERROR en query de calificaciones: {str(e)}")
-        data = []
-
-    if not data:
-        return {
-            "total_secciones_analizadas": total_secciones_planificadas,
-            "secciones_criticas": 0,
-            "promedio_general": 0.0,
-            "indice_aprobacion": 0.0,
-            "total_estudiantes": 0
-        }
-    
-    df = pd.DataFrame(data)
-    df["nota"] = pd.to_numeric(df["nota"], errors='coerce')
-    df = df.dropna(subset=["nota"])
-
-    if df.empty:
-        return {
-            "total_secciones_analizadas": total_secciones_planificadas,
-            "secciones_criticas": 0,
-            "promedio_general": 0.0,
-            "indice_aprobacion": 0.0,
-            "total_estudiantes": 0
-        }
-
-    # Calculamos sobre las notas reales encontradas
-    total_secciones_con_notas = int(df["id_seccion"].nunique())
-    total_estudiantes_notas = int(df["id_estudiante"].nunique())
-
-    # Si no hay estudiantes en notas, intentamos traer el total de la masa estudiantil de ese periodo
-    if total_estudiantes_notas == 0:
-        masa = get_masa_estudiantil(codigo_carrera, escuela, periodo)
-        total_estudiantes_final = sum(m["total_general"] for m in masa)
-    else:
-        total_estudiantes_final = total_estudiantes_notas
-
-    resumen_secciones = df.groupby("id_seccion").agg(
-        total_estudiantes_seccion=("nota", "count"),
-        reprobados=("nota", lambda x: (x < 70).sum())
-    )
-    resumen_secciones["porcentaje_reprobacion"] = (resumen_secciones["reprobados"] / resumen_secciones["total_estudiantes_seccion"]) * 100
-    secciones_criticas = int((resumen_secciones["porcentaje_reprobacion"] > 30).sum())
-
-    promedio_general = round(float(df["nota"].mean()), 2)
-    indice_aprobacion = round(float((df["nota"] >= 70).sum() / len(df) * 100), 2)
-
-    return {
-        "total_secciones_analizadas": max(total_secciones_planificadas, total_secciones_con_notas),
-        "secciones_criticas": secciones_criticas,
-        "promedio_general": promedio_general,
-        "indice_aprobacion": indice_aprobacion,
-        "total_estudiantes": total_estudiantes_final
-    }
+        print(f"Error en get_resumen_periodo: {str(e)}")
+        return {"total_secciones_analizadas": 0, "secciones_criticas": 0, "promedio_general": 0.0, "indice_aprobacion": 0.0, "total_estudiantes": 0}
 
 def get_masa_estudiantil(codigo_carrera: str = None, escuela: str = None, periodo: str = None):
-    # ESTRATEGIA: Si hay escuela, primero buscamos qué carreras pertenecen a esa escuela
-    codigos_carreras_permitidos = []
+    # ESTRATEGIA: Para determinar la masa estudiantil en un PERIODO específico,
+    # lo más fiable es ver qué estudiantes tienen registros en la tabla 'calificacion'
+    # para ese periodo, o si no hay periodo, usar la tabla de estudiantes completa.
     
-    if escuela:
-        try:
-            res_carreras = supabase.table("carreras").select("codigo").eq("codigo_escuela", escuela).execute()
-            if res_carreras.data:
-                codigos_carreras_permitidos = [c["codigo"] for c in res_carreras.data]
-            else:
-                return []
-        except Exception as e:
+    try:
+        # 1. Obtener lista de materias filtradas primero (igual que en rendimiento)
+        select_materia = "codigo, nombre, codigo_carrera"
+        if escuela:
+            select_materia += ", carreras!inner(codigo_escuela, nombre)"
+        else:
+            select_materia += ", carreras(nombre)"
+            
+        materia_query = supabase.table("materia").select(select_materia)
+        
+        if escuela:
+            materia_query = materia_query.eq("carreras.codigo_escuela", escuela)
+        
+        if codigo_carrera:
+            materia_query = materia_query.eq("codigo_carrera", codigo_carrera)
+            
+        res_mat = materia_query.execute()
+        if not res_mat.data:
+            return []
+            
+        materias_validas = {m["codigo"]: m for m in res_mat.data}
+        codigos_materias = list(materias_validas.keys())
+
+        # 2. Obtener calificaciones para esas materias en el periodo
+        select_fields = "id_estudiante, estudiantes(estado_activo), codigo_materia"
+        query = supabase.table("calificacion").select(select_fields).in_("codigo_materia", codigos_materias)
+        
+        if periodo:
+            query = query.eq("periodo_academico", periodo)
+
+        data = _ejecutar_query(query)
+        
+        # Si no hay datos en calificaciones para ese periodo, intentamos traer de la tabla estudiantes 
+        # (pero solo si no se especificó periodo o si queremos ver la base general)
+        if not data and not periodo:
+            query_est = supabase.table("estudiantes").select("id_unphu, estado_activo, codigo_carrera, carreras(nombre)")
+            if codigo_carrera: query_est = query_est.eq("codigo_carrera", codigo_carrera)
+            if escuela: query_est = query_est.eq("carreras.codigo_escuela", escuela)
+            data_est = _ejecutar_query(query_est)
+            
+            if not data_est: return []
+            
+            df = pd.DataFrame(data_est)
+            df = df.rename(columns={"id_unphu": "id_estudiante"})
+            df["nombre_carrera"] = df["carreras"].apply(lambda x: x["nombre"] if isinstance(x, dict) else "N/A")
+        elif not data:
+            return []
+        else:
+            # Procesar datos de calificaciones
+            raw_df = pd.DataFrame(data)
+            
+            # Aplanar la estructura usando el mapa de materias_validas
+            def aplanar(row):
+                cod_mat = row.get("codigo_materia")
+                est = row.get("estudiantes")
+                
+                # Si la materia no está en nuestro mapa filtrado (no debería pasar), saltamos
+                if cod_mat not in materias_validas: return None
+                
+                mat_info = materias_validas[cod_mat]
+                car_info = mat_info.get("carreras")
+                nombre_carrera = car_info.get("nombre") if isinstance(car_info, dict) else "N/A"
+                
+                return pd.Series({
+                    "id_estudiante": row["id_estudiante"],
+                    "estado_activo": est.get("estado_activo") if isinstance(est, dict) else "Activo",
+                    "codigo_carrera": mat_info.get("codigo_carrera"),
+                    "nombre_carrera": nombre_carrera
+                })
+
+            df = raw_df.apply(aplanar, axis=1).dropna(subset=["id_estudiante"])
+            # Eliminar duplicados por combinación (estudiante, carrera de la materia)
+            df = df.drop_duplicates(subset=["id_estudiante", "codigo_carrera"])
+
+        if df.empty:
             return []
 
-    # Consulta Estudiantes
-    query = supabase.table("estudiantes").select("id_unphu, estado_activo, codigo_carrera, periodo_inscripcion, carreras(nombre)")
-    
-    if codigo_carrera:
-        query = query.eq("codigo_carrera", codigo_carrera)
-    
-    # Filtro por periodo de inscripción (formato 01-2025)
-    if periodo:
-        query = query.eq("periodo_inscripcion", periodo)
-    
-    if escuela and codigos_carreras_permitidos:
-        query = query.in_("codigo_carrera", codigos_carreras_permitidos)
+        # Agrupar por carrera para el gráfico
+        resumen = df.groupby(["codigo_carrera", "nombre_carrera"]).agg(
+            total_activos = ("estado_activo", lambda x: int(((x=="Activo") | (x=="Activa")).sum())),
+            total_inactivos=("estado_activo", lambda x: int(((x == "Inactivo") | (x=="Inactiva")).sum())),
+            total_general=("id_estudiante", "count" )
+        ).reset_index()
 
-    try:
-        data = _ejecutar_query(query)
-    except:
+        return resumen.to_dict(orient="records")
+        
+    except Exception as e:
+        print(f"Error en get_masa_estudiantil: {str(e)}")
         return []
-
-    if not data:
-        return []
-    
-    df = pd.DataFrame(data)
-    df["nombre_carrera"] = df["carreras"].apply(lambda x: x["nombre"] if isinstance(x, dict) else "N/A")
-
-    # Agrupar por carrera para el gráfico de pastel
-    resumen = df.groupby(["codigo_carrera", "nombre_carrera"]).agg(
-        total_activos = ("estado_activo", lambda x: int((x=="Activo" or x=="Activa").sum())),
-        total_inactivos=("estado_activo", lambda x: int((x == "Inactivo" or x=="Inactiva").sum())),
-        total_general=("id_unphu", "count" )
-    ).reset_index()
-
-    return resumen.to_dict(orient="records")
 
 def get_detalle_materia_secciones(codigo_materia: str, periodo: str):
     """

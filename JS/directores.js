@@ -1,8 +1,5 @@
 // Determinación de la URL de la API
-let BASE_API_DIR = (typeof API_URL !== 'undefined') ? API_URL : "https://black-box-bryr.onrender.com";
-if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-    BASE_API_DIR = "http://127.0.0.1:8000";
-}
+const BASE_API_DIR = (typeof API_URL !== 'undefined') ? API_URL : "https://black-box-bryr.onrender.com";
 
 let editandoId = null;
 

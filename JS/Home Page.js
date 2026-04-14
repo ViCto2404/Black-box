@@ -2,103 +2,164 @@
 Chart.register(ChartDataLabels);
 
 let chartMasa, chartRendimiento;
+let dashboardAbortController = null;
+let reloadInProgress = false; // Guard para evitar bucles de recarga
 
 // Determinar la URL de la API de forma dinámica
-// Usamos la configurada en config.js como base
-let BASE_API_DASH = (typeof API_URL !== 'undefined') ? API_URL : "https://black-box-bryr.onrender.com";
-
-// Solo forzar localhost si el navegador explícitamente está en localhost
-if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-    // Si prefieres usar el backend local mientras desarrollas, descomenta la línea de abajo:
-    // BASE_API_DASH = "http://127.0.0.1:8000";
-}
+const BASE_API_DASH = (typeof API_URL !== 'undefined') ? API_URL : "https://black-box-bryr.onrender.com";
 
 async function actualizarDashboard() {
     const periodo = document.getElementById("filtroPeriodoGlobal")?.value;
-    
-    // Si los selectores no están listos o no tienen valor, no continuar
+    const carreraSeleccionada = document.getElementById("filtroCarreraRendimiento")?.value || "";
     if (!periodo) return;
 
-    const carreraSeleccionada = document.getElementById("filtroCarreraRendimiento").value;
+    console.log(`[Dashboard] Actualizando para Periodo: ${periodo}, Carrera: ${carreraSeleccionada}`);
 
-    // Obtener datos de sesión
-    const rawRole = localStorage.getItem("userRole") || "";
-    const userRole = rawRole.toLowerCase().trim();
-    const codigoEscuela = localStorage.getItem("codigoEscuela");
-    const token = localStorage.getItem("token");
+    // 1. HARD RESET
+    if (dashboardAbortController) dashboardAbortController.abort();
+    dashboardAbortController = new AbortController();
+    const signal = dashboardAbortController.signal;
 
-    const headers = {
-        'Authorization': `Bearer ${token}`
+    // Guardar estado para recuperación tras recarga
+    sessionStorage.setItem("lastPeriodo", periodo);
+    sessionStorage.setItem("lastCarrera", carreraSeleccionada);
+
+    // Reset Visual
+    document.querySelectorAll('.no-data-msg').forEach(m => m.remove());
+    const allCards = document.querySelectorAll('.card, .card-chart');
+    allCards.forEach(c => {
+        c.style.opacity = '0.6';
+        c.style.transition = 'opacity 0.3s ease';
+    });
+
+    const kpiIds = ["promedio", "tasaAprobacion", "totalEstudiantes", "materiasCriticas"];
+    kpiIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = "...";
+    });
+
+    // VALIDACIÓN DE INTEGRIDAD ACTIVA
+    const validarIntegridadVisual = (tipo, dataRecibida) => {
+        if (reloadInProgress) return;
+
+        setTimeout(() => {
+            let errorDetectado = false;
+            let motivo = "";
+
+            if (tipo === "kpis") {
+                const tienePuntos = kpiIds.some(id => document.getElementById(id)?.textContent === "...");
+                if (tienePuntos && dataRecibida) {
+                    errorDetectado = true;
+                    motivo = "KPIs se quedaron en estado de carga";
+                }
+            } else if (tipo === "masa") {
+                const tieneData = dataRecibida && dataRecibida.length > 0;
+                const chartDibujado = chartMasa && chartMasa.data.datasets[0].data.length > 0;
+                if (tieneData && !chartDibujado) {
+                    errorDetectado = true;
+                    motivo = "Gráfico de Masa no se renderizó habiendo datos";
+                }
+            } else if (tipo === "rendimiento") {
+                const tieneData = dataRecibida && dataRecibida.length > 0;
+                const chartDibujado = chartRendimiento && chartRendimiento.data.datasets[0].data.length > 0;
+                if (tieneData && !chartDibujado) {
+                    errorDetectado = true;
+                    motivo = "Gráfico de Rendimiento no se renderizó habiendo datos";
+                }
+            }
+
+            if (errorDetectado) {
+                console.error(`[Fallo Visual] ${motivo}. Forzando reparación de interfaz...`);
+                reloadInProgress = true;
+                window.location.reload();
+            } else {
+                console.log(`[Integridad] Check ${tipo} OK`);
+            }
+        }, 1500); // 1.5s para asegurar que Chart.js terminó
     };
 
-    console.log("DEBUG DASHBOARD: Rol:", userRole, "Escuela:", codigoEscuela, "Periodo:", periodo);
+    // 2. CAPTURA FRESCA
+    const userRole = (localStorage.getItem("userRole") || "").toLowerCase().trim();
+    const codigoEscuela = localStorage.getItem("codigoEscuela");
+    const token = localStorage.getItem("token");
+    const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
-    let params = "";
-    let params_rendimiento = "";
+    const restaurarOpacidad = (selector) => {
+        const els = selector ? document.querySelectorAll(selector) : allCards;
+        els.forEach(c => c.style.opacity = '1');
+    };
 
-    // Si es director, aplicar filtro de escuela
-    if (userRole === "director") {
-        if (codigoEscuela && codigoEscuela !== "null" && codigoEscuela !== "undefined") {
-            params = `?escuela=${codigoEscuela}`;
-            params_rendimiento = `?codigo_escuela=${codigoEscuela}`;
-        }
+    // 3. PARÁMETROS
+    const filteredParams = new URLSearchParams();
+    if (userRole === "director" && codigoEscuela && codigoEscuela !== "null") {
+        filteredParams.append("codigo_escuela", codigoEscuela);
+        filteredParams.append("escuela", codigoEscuela);
     }
+    if (carreraSeleccionada) filteredParams.append("codigo_carrera", carreraSeleccionada);
 
-    // El filtro de carrera solo afecta a Rendimiento y Resumen
-    if (carreraSeleccionada) {
-        params_rendimiento += (params_rendimiento ? "&" : "?") + `codigo_carrera=${carreraSeleccionada}`;
-    }
+    const masaParams = new URLSearchParams();
+    if (userRole === "director" && codigoEscuela && codigoEscuela !== "null") masaParams.append("escuela", codigoEscuela);
+    masaParams.append("periodo", periodo);
 
-    // 1. Cargar Resumen (KPIs)
-    let urlResumen = `${BASE_API_DASH}/dashboard/resumen/${periodo}${params}`;
-    if (carreraSeleccionada) {
-        urlResumen += (urlResumen.includes("?") ? "&" : "?") + `codigo_carrera=${carreraSeleccionada}`;
-    }
-
-    fetch(urlResumen, { headers })
+    // 4. PETICIONES
+    
+    // KPIs
+    fetch(`${BASE_API_DASH}/dashboard/resumen/${periodo}?${filteredParams.toString()}`, { headers, signal })
         .then(res => res.json())
         .then(data => {
+            if (signal.aborted) return;
             document.getElementById("promedio").textContent = Number(data.promedio_general || 0).toFixed(2);
             document.getElementById("tasaAprobacion").textContent = `${Number(data.indice_aprobacion || 0).toFixed(1)}%`;
             document.getElementById("totalEstudiantes").textContent = data.total_estudiantes || 0;
             document.getElementById("materiasCriticas").textContent = data.secciones_criticas || 0;
+            document.querySelectorAll('.card').forEach(c => c.style.opacity = '1');
+            validarIntegridadVisual("kpis", data);
         })
-        .catch(err => console.error("Error en resumen:", err));
+        .catch(err => { if (err.name !== 'AbortError') { console.error("Error KPIs:", err); restaurarOpacidad('.card'); } });
 
-    // 2. Gráfico de Masa Estudiantil
-    const urlMasa = `${BASE_API_DASH}/dashboard/masa-estudiantil${params}${params ? '&' : '?'}periodo=${periodo}`;
-    fetch(urlMasa, { headers })
+    // Masa
+    fetch(`${BASE_API_DASH}/dashboard/masa-estudiantil?${masaParams.toString()}`, { headers, signal })
         .then(res => res.json())
         .then(data => {
+            if (signal.aborted) return;
+            const cardMasa = document.getElementById('chartMasa')?.closest('.card-chart');
+            if (cardMasa) cardMasa.style.opacity = '1';
+            
             if (data && data.length > 0) {
-                const labels = data.map(i => i.nombre_carrera || i.codigo_carrera);
-                const valores = data.map(i => i.total_general);
-                dibujarChartMasa(labels, valores);
+                dibujarChartMasa(data.map(i => i.nombre_carrera || i.codigo_carrera), data.map(i => i.total_general));
             } else {
-                if (chartMasa) chartMasa.destroy();
+                if (chartMasa) { chartMasa.destroy(); chartMasa = null; }
             }
+            validarIntegridadVisual("masa", data);
         })
-        .catch(err => console.error("Error en masa estudiantil:", err));
+        .catch(err => { if (err.name !== 'AbortError') { console.error("Error Masa:", err); restaurarOpacidad('#chartMasa'); } });
 
-    // 3. Gráfico de Rendimiento
-    let urlRendimiento = `${BASE_API_DASH}/dashboard/rendimiento/${periodo}${params_rendimiento}`;
-    fetch(urlRendimiento, { headers })
+    // Rendimiento
+    fetch(`${BASE_API_DASH}/dashboard/rendimiento/${periodo}?${filteredParams.toString()}`, { headers, signal })
         .then(res => res.json())
         .then(data => {
+            if (signal.aborted) return;
+            const cardRend = document.getElementById('chartRendimiento')?.closest('.card-chart');
+            if (cardRend) cardRend.style.opacity = '1';
+            
             if (data && data.length > 0) {
-                const top5Peores = data
-                    .sort((a, b) => a.promedio - b.promedio)
-                    .slice(0, 5)
-                    .sort((a, b) => b.promedio - a.promedio);
-
-                const labels = top5Peores.map(i => i.nombre_materia || i.codigo_materia);
-                const valores = top5Peores.map(i => i.promedio);
-                dibujarChartRendimiento(labels, valores);
+                document.getElementById('chartRendimiento').style.display = 'block';
+                const top5 = data.sort((a, b) => a.promedio - b.promedio).slice(0, 5).sort((a, b) => b.promedio - a.promedio);
+                dibujarChartRendimiento(top5.map(i => i.nombre_materia || i.codigo_materia), top5.map(i => i.promedio));
             } else {
-                if (chartRendimiento) chartRendimiento.destroy();
+                if (chartRendimiento) { chartRendimiento.destroy(); chartRendimiento = null; }
+                document.getElementById('chartRendimiento').style.display = 'none';
+                if (cardRend && !cardRend.querySelector('.no-data-msg')) {
+                    const msgDiv = document.createElement('div');
+                    msgDiv.className = 'no-data-msg';
+                    msgDiv.style = "text-align: center; color: #666; padding: 20px;";
+                    msgDiv.innerHTML = `<p>No hay datos en el periodo ${periodo}.</p>`;
+                    cardRend.appendChild(msgDiv);
+                }
             }
+            validarIntegridadVisual("rendimiento", data);
         })
-        .catch(err => console.error("Error en rendimiento:", err));
+        .catch(err => { if (err.name !== 'AbortError') { console.error("Error Rendimiento:", err); restaurarOpacidad('#chartRendimiento'); } });
 }
 
 // Cargar periodos desde la base de datos
@@ -129,8 +190,13 @@ async function cargarPeriodosFiltro() {
             selPeriodo.appendChild(opt);
         });
 
-        // Seleccionar el primero por defecto (más reciente)
-        selPeriodo.selectedIndex = 0;
+        // Restaurar filtro guardado o seleccionar el primero
+        const saved = sessionStorage.getItem("lastPeriodo");
+        if (saved && [...selPeriodo.options].some(o => o.value === saved)) {
+            selPeriodo.value = saved;
+        } else {
+            selPeriodo.selectedIndex = 0;
+        }
 
     } catch (err) {
         console.error("Error cargando periodos:", err);
@@ -166,6 +232,12 @@ async function cargarCarrerasFiltro() {
             opt.textContent = c.nombre;
             selector.appendChild(opt);
         });
+
+        // Restaurar filtro guardado
+        const saved = sessionStorage.getItem("lastCarrera");
+        if (saved && [...selector.options].some(o => o.value === saved)) {
+            selector.value = saved;
+        }
     } catch (err) {
         console.error("Error cargando carreras para filtro:", err);
     }
