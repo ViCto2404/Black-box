@@ -73,21 +73,14 @@
         </div>
         <div class="filtros-container">
             <div class="filter-group">
-                <label for="filtroAnio">Año</label>
+                <label for="filtroPeriodoGlobal">Periodo Académico</label>
                 <div class="select-wrapper">
-                    <select id="filtroAnio" onchange="actualizarDashboard()">
-                        <!-- Dinámico -->
+                    <select id="filtroPeriodoGlobal" onchange="actualizarDashboard()">
+                        <option value="">Cargando periodos...</option>
                     </select>
                 </div>
             </div>
-            <div class="filter-group">
-                <label for="filtroPeriodoCuatri">Periodo</label>
-                <div class="select-wrapper">
-                    <select id="filtroPeriodoCuatri" onchange="actualizarDashboard()">
-                        <!-- Dinámico -->
-                    </select>
-                </div>
-            </div>
+
         </div>
     </div>
     <div class="report-section">

@@ -159,23 +159,22 @@ async function confirmarDescargaMateria() {
  * Función original para los reportes directos del dashboard
  */
 async function descargarReporte() {
-    const anio = document.getElementById("filtroAnio")?.value;
-    const cuatri = document.getElementById("filtroPeriodoCuatri")?.value;
+    const periodo = document.getElementById("filtroPeriodoGlobal")?.value;
     const tipoReporte = document.getElementById("tipoReporte").value;
     const formatoSelector = document.getElementById("formatoReporte");
     const formato = formatoSelector.value;
 
     if (tipoReporte === "materia_detalle") return; // Manejado por modal
 
-    if (!anio || !cuatri) {
+    if (!periodo) {
         alert("Por favor seleccione un periodo válido en los filtros del dashboard.");
         formatoSelector.selectedIndex = 0;
         return;
     }
-    
-    const periodo = `${cuatri}-${anio}`;
+
     const usuarioActual = localStorage.getItem("id_unphu") || localStorage.getItem("username") || "ADMIN---UNPHU";
     const codigoEscuela = localStorage.getItem("codigoEscuela") || "";
+
 
     try {
         let endpoint = "";

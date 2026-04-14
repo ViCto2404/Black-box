@@ -23,8 +23,16 @@ def get_periodos():
         # Combinar y extraer valores únicos
         todos = set(periodos_cal + periodos_sec)
         
-        # Filtrar valores nulos o vacíos y ordenar
-        periodos = sorted([p for p in todos if p], reverse=True)
+        # Filtrar valores nulos, vacíos y limitar hasta el año 2025
+        # Se asume formato XX-YYYY, tomamos la parte final
+        periodos_filtrados = []
+        for p in todos:
+            if p and "-" in p:
+                anio = p.split("-")[-1]
+                if int(anio) <= 2025:
+                    periodos_filtrados.append(p)
+        
+        periodos = sorted(periodos_filtrados, reverse=True)
         return periodos
     except Exception as e:
         print(f"Error obteniendo periodos: {str(e)}")
@@ -94,46 +102,48 @@ def get_materias_criticas(periodo: str, codigo_escuela: str= None, codigo_carrer
 def get_resumen_periodo(periodo: str, escuela: str = None, codigo_carrera: str = None, codigo_materia: str = None):
     print(f"DEBUG: get_resumen_periodo - Periodo: {periodo}, Escuela: {escuela}, Carrera: {codigo_carrera}, Materia: {codigo_materia}")
     
-    # Consulta dinámica
+    # 1. Obtener base de secciones para conteo de unidades analizadas
+    # Esto asegura que si hay secciones registradas pero sin notas, el dashboard muestre algo
+    q_sec = supabase.table("seccion").select("id", count="exact").eq("periodo", periodo)
+    if escuela:
+        q_sec = q_sec.eq("materia.carreras.codigo_escuela", escuela)
+    if codigo_carrera:
+        q_sec = q_sec.eq("materia.codigo_carrera", codigo_carrera)
+    if codigo_materia:
+        q_sec = q_sec.eq("materia", codigo_materia)
+    
+    res_sec = q_sec.execute()
+    total_secciones_planificadas = res_sec.count if hasattr(res_sec, "count") else 0
+
+    # 2. Consulta dinámica de calificaciones
     select_fields = "nota, id_seccion, id_estudiante"
     
-    # Si hay filtros externos que requieren join
+    # Usamos joins normales (sin inner forzado) para no descartar registros si falla una relación
     if escuela or codigo_carrera:
-        select_fields += ", materia!inner(codigo_carrera, carreras!inner(codigo_escuela))"
+        select_fields += ", materia(codigo_carrera, carreras(codigo_escuela))"
         
     query = supabase.table("calificacion").select(select_fields).eq("periodo_academico", periodo)
     
     if escuela:
         query = query.eq("materia.carreras.codigo_escuela", escuela)
-    
     if codigo_carrera:
         query = query.eq("materia.codigo_carrera", codigo_carrera)
-        
     if codigo_materia:
         query = query.eq("codigo_materia", codigo_materia)
 
     try:
         data = _ejecutar_query(query)
     except Exception as e:
-        print(f"ERROR en query de resumen: {str(e)}")
-        return {
-            "total_secciones_analizadas": 0,
-            "secciones_criticas": 0,
-            "promedio_general": 0.0,
-            "indice_aprobacion": 0.0,
-            "total_estudiantes": 0,
-            "error": str(e),
-            "debug_params": {"periodo": periodo, "escuela": escuela, "codigo_carrera": codigo_carrera}
-        }
+        print(f"ERROR en query de calificaciones: {str(e)}")
+        data = []
 
     if not data:
         return {
-            "total_secciones_analizadas": 0,
+            "total_secciones_analizadas": total_secciones_planificadas,
             "secciones_criticas": 0,
             "promedio_general": 0.0,
             "indice_aprobacion": 0.0,
-            "total_estudiantes": 0,
-            "debug_msg": f"No data found for period: {periodo}, escuela: {escuela}"
+            "total_estudiantes": 0
         }
     
     df = pd.DataFrame(data)
@@ -142,15 +152,15 @@ def get_resumen_periodo(periodo: str, escuela: str = None, codigo_carrera: str =
 
     if df.empty:
         return {
-            "total_secciones_analizadas": 0,
+            "total_secciones_analizadas": total_secciones_planificadas,
             "secciones_criticas": 0,
             "promedio_general": 0.0,
             "indice_aprobacion": 0.0,
-            "total_estudiantes": 0,
-            "debug_msg": "Data found but 'nota' column is empty or invalid"
+            "total_estudiantes": 0
         }
 
-    total_secciones = int(df["id_seccion"].nunique())
+    # Calculamos sobre las notas reales encontradas
+    total_secciones_con_notas = int(df["id_seccion"].nunique())
     total_estudiantes = int(df["id_estudiante"].nunique())
     
     resumen_secciones = df.groupby("id_seccion").agg(
@@ -164,7 +174,7 @@ def get_resumen_periodo(periodo: str, escuela: str = None, codigo_carrera: str =
     indice_aprobacion = round(float((df["nota"] >= 70).sum() / len(df) * 100), 2)
 
     return {
-        "total_secciones_analizadas": total_secciones,
+        "total_secciones_analizadas": max(total_secciones_planificadas, total_secciones_con_notas),
         "secciones_criticas": secciones_criticas,
         "promedio_general": promedio_general,
         "indice_aprobacion": indice_aprobacion,

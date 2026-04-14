@@ -12,13 +12,11 @@ if (window.location.hostname === "localhost" || window.location.hostname === "12
 }
 
 async function actualizarDashboard() {
-    const anio = document.getElementById("filtroAnio")?.value;
-    const cuatri = document.getElementById("filtroPeriodoCuatri")?.value;
+    const periodo = document.getElementById("filtroPeriodoGlobal")?.value;
     
     // Si los selectores no están listos o no tienen valor, no continuar
-    if (!anio || !cuatri) return;
+    if (!periodo) return;
 
-    const periodo = `${cuatri}-${anio}`;
     const carreraSeleccionada = document.getElementById("filtroCarreraRendimiento").value;
 
     // Obtener datos de sesión
@@ -37,7 +35,7 @@ async function actualizarDashboard() {
         }
     }
 
-    // El filtro de carrera solo afecta a Rendimiento y Resumen (si el API lo soporta)
+    // El filtro de carrera solo afecta a Rendimiento y Resumen
     if (carreraSeleccionada) {
         params_rendimiento += (params_rendimiento ? "&" : "?") + `codigo_carrera=${carreraSeleccionada}`;
     }
@@ -67,6 +65,8 @@ async function actualizarDashboard() {
                 const labels = data.map(i => i.nombre_carrera || i.codigo_carrera);
                 const valores = data.map(i => i.total_general);
                 dibujarChartMasa(labels, valores);
+            } else {
+                if (chartMasa) chartMasa.destroy();
             }
         })
         .catch(err => console.error("Error en masa estudiantil:", err));
@@ -94,56 +94,35 @@ async function actualizarDashboard() {
 
 // Cargar periodos desde la base de datos
 async function cargarPeriodosFiltro() {
-    const selAnio = document.getElementById("filtroAnio");
-    const selCuatri = document.getElementById("filtroPeriodoCuatri");
-    if (!selAnio || !selCuatri) return;
-
-    // Mostrar estado de carga visual
-    selAnio.innerHTML = "<option>...</option>";
-    selCuatri.innerHTML = "<option>Cargando datos...</option>";
+    const selPeriodo = document.getElementById("filtroPeriodoGlobal");
+    if (!selPeriodo) return;
 
     try {
-        console.log("Pidiendo periodos reales a:", `${BASE_API}/dashboard/periodos`);
         const res = await fetch(`${BASE_API}/dashboard/periodos`);
-        
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const periodosDisponibles = await res.json();
-        console.log("Periodos recibidos de la BD:", periodosDisponibles);
 
         if (!periodosDisponibles || periodosDisponibles.length === 0) {
-            selAnio.innerHTML = "<option value=''>N/A</option>";
-            selCuatri.innerHTML = "<option value=''>Sin datos</option>";
+            selPeriodo.innerHTML = "<option value=''>Sin datos</option>";
             return;
         }
 
-        // Limpiar para llenar con datos reales
-        selAnio.innerHTML = "";
-        selCuatri.innerHTML = "";
-
-        const anios = [...new Set(periodosDisponibles.map(p => p.split("-")[1]))].sort((a, b) => b - a);
-        const cuatris = [...new Set(periodosDisponibles.map(p => p.split("-")[0]))].sort((a, b) => b - a);
-
-        anios.forEach(a => {
+        selPeriodo.innerHTML = "";
+        periodosDisponibles.forEach(p => {
             const opt = document.createElement("option");
-            opt.value = a; opt.textContent = a;
-            selAnio.appendChild(opt);
+            opt.value = p; 
+            const [cuatri, anio] = p.split("-");
+            opt.textContent = `Periodo ${parseInt(cuatri)} - ${anio}`;
+            selPeriodo.appendChild(opt);
         });
 
-        cuatris.forEach(c => {
-            const opt = document.createElement("option");
-            opt.value = c; opt.textContent = `Periodo ${parseInt(c)}`;
-            selCuatri.appendChild(opt);
-        });
-
-        const masReciente = periodosDisponibles[0].split("-");
-        selAnio.value = masReciente[1];
-        selCuatri.value = masReciente[0];
+        // Seleccionar el primero por defecto (más reciente)
+        selPeriodo.selectedIndex = 0;
 
     } catch (err) {
         console.error("Error cargando periodos:", err);
-        selAnio.innerHTML = "<option value=''>Error</option>";
-        selCuatri.innerHTML = "<option value=''>Ver Consola (F12)</option>";
+        selPeriodo.innerHTML = "<option value=''>Error al cargar</option>";
     }
 }
 
