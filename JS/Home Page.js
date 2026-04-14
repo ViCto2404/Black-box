@@ -112,7 +112,12 @@ async function actualizarDashboard() {
     };
 
     // 3. PARÁMETROS
-    // ... rest of the code ...
+    const filteredParams = new URLSearchParams();
+    if (carreraSeleccionada) filteredParams.append("codigo_carrera", carreraSeleccionada);
+    if (userRole === "director" && codigoEscuela) filteredParams.append("codigo_escuela", codigoEscuela);
+
+    const masaParams = new URLSearchParams(filteredParams);
+    if (periodo) masaParams.append("periodo", periodo);
 
     // 4. PETICIONES
     
