@@ -46,7 +46,7 @@ def get_rendimiento_por_materia(periodo:str, codigo_escuela: str= None, codigo_c
     query = supabase.table("calificacion").select(select_fields).eq("periodo_academico", periodo)
     
     if codigo_escuela:
-        query = query.eq("materia.carreras.codigo_escuela", escuela)
+        query = query.eq("materia.carreras.codigo_escuela", codigo_escuela)
     
     if codigo_carrera:
         query = query.eq("materia.codigo_carrera", codigo_carrera)

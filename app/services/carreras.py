@@ -2,20 +2,36 @@ from app.database.supabase_client import supabase
 
 
 def get_todas_carreras(estado: str = None, codigo_escuela: str = None):
-    query = supabase.table("carreras").select("*, escuelas(nombre)")
-    if estado:
-        query = query.eq("estado", estado)
-    if codigo_escuela:
-        query = query.eq("codigo_escuela", codigo_escuela)
-    data = query.execute()
-    if not data.data:
+    try:
+        # Especificar la relación para evitar conflictos si hay múltiples FKeys
+        relacion = "escuelas!carreras_codigo_escuela_fkey(nombre)"
+        query = supabase.table("carreras").select(f"*, {relacion}")
+        
+        if estado:
+            query = query.eq("estado", estado)
+        if codigo_escuela:
+            query = query.eq("codigo_escuela", codigo_escuela)
+            
+        data = query.execute()
+        if not data.data:
+            return []
+            
+        resultados = []
+        for c in data.data:
+            # PostgREST puede devolver la llave simplificada o completa
+            escuela_info = c.get("escuelas") or c.get("escuelas!carreras_codigo_escuela_fkey")
+            
+            c["nombre_escuela"] = escuela_info["nombre"] if isinstance(escuela_info, dict) else "N/A"
+            
+            # Limpiar llaves de join
+            c.pop("escuelas", None)
+            c.pop("escuelas!carreras_codigo_escuela_fkey", None)
+            resultados.append(c)
+            
+        return resultados
+    except Exception as e:
+        print(f"Error en get_todas_carreras: {str(e)}")
         return []
-    resultados = []
-    for c in data.data:
-        c["nombre_escuela"] = c["escuelas"]["nombre"] if isinstance(c.get("escuelas"), dict) else None
-        c.pop("escuelas", None)
-        resultados.append(c)
-    return resultados
 
 
 def get_carrera_por_codigo(codigo: str):
